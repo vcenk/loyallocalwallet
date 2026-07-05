@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.com.loyallocal.card",
+  "teamIdentifier": "NAC8L7HCJL",
+  "organizationName": "LoyalLocal",
+  "description": "Loyalty Card",
+  "backgroundColor": "rgb(174, 49, 21)",
+  "foregroundColor": "rgb(255, 255, 255)",
+  "labelColor": "rgb(255, 255, 255)",
+  "storeCard": {
+    "headerFields": [],
+    "primaryFields": [],
+    "secondaryFields": [],
+    "auxiliaryFields": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "local-loyalty-wallet",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Wallet-first loyalty platform for local small businesses. Monorepo root.",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "postinstall": "echo \"Phase 0 scaffold. Apps are wired up in later phases.\""
+  }
+}

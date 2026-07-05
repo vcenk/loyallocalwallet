@@ -1,0 +1,3 @@
+-- Local Loyalty Wallet — seed data
+-- Populated in later phases (demo business, test program, seed data: Phase 8).
+-- Phase 0 scaffold only.

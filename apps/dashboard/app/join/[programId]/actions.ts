@@ -1,0 +1,80 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { enrollSchema } from "@/lib/validation";
+import { generateSerial } from "@/lib/token";
+import { rateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
+
+export async function enroll(formData: FormData) {
+  const programId = String(formData.get("programId") ?? "");
+
+  const ip = clientIpFromHeaders(await headers());
+  if (!rateLimit(`enroll:${programId}:${ip}`, 8, 5 * 60_000).ok) {
+    redirect(
+      `/join/${programId}?error=${encodeURIComponent("Too many attempts. Please try again in a few minutes.")}`,
+    );
+  }
+
+  const parsed = enrollSchema.safeParse({
+    firstName: formData.get("firstName"),
+    email: formData.get("email") || "",
+    phone: formData.get("phone") || undefined,
+    platform: formData.get("platform"),
+  });
+  if (!parsed.success) {
+    redirect(
+      `/join/${programId}?error=${encodeURIComponent(parsed.error.issues[0].message)}`,
+    );
+  }
+
+  const consent = formData.get("marketingConsent") === "on";
+  const supabase = createAdminClient();
+
+  const { data: program } = await supabase
+    .from("loyalty_programs")
+    .select("id, business_id, status")
+    .eq("id", programId)
+    .maybeSingle();
+  if (!program || program.status !== "active") {
+    redirect(
+      `/join/${programId}?error=${encodeURIComponent("This program is not available.")}`,
+    );
+  }
+
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .insert({
+      business_id: program.business_id,
+      first_name: parsed.data.firstName,
+      email: parsed.data.email || null,
+      phone: parsed.data.phone || null,
+      marketing_consent: consent,
+    })
+    .select("id")
+    .single();
+  if (customerError || !customer) {
+    redirect(
+      `/join/${programId}?error=${encodeURIComponent(customerError?.message ?? "Could not enroll.")}`,
+    );
+  }
+
+  const serial = generateSerial();
+  const { error: passError } = await supabase.from("wallet_passes").insert({
+    business_id: program.business_id,
+    customer_id: customer.id,
+    program_id: program.id,
+    platform: parsed.data.platform,
+    serial_number: serial,
+    authentication_token: generateSerial(),
+    status: "created",
+  });
+  if (passError) {
+    redirect(
+      `/join/${programId}?error=${encodeURIComponent(passError.message)}`,
+    );
+  }
+
+  redirect(`/join/${programId}/success?p=${serial}`);
+}

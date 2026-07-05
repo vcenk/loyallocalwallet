@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Scan the shared UI package so its Tailwind classes are generated. */
+@source "../../../packages/ui/src";
+
+/* LoyalLocal design tokens — warm rust/coral on cream (see Downloads design pack). */
+:root {
+  --background: #fff8f6;
+  --foreground: #261815;
+  --card: #ffffff;
+  --card-foreground: #261815;
+  --popover: #ffffff;
+  --popover-foreground: #261815;
+  --primary: #ae3115;
+  --primary-foreground: #ffffff;
+  --accent: #ff6b4a;
+  --accent-foreground: #ffffff;
+  --secondary: #fff0ed;
+  --secondary-foreground: #261815;
+  --muted: #fff0ed;
+  --muted-foreground: #59413c;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --success: #2d8a5c;
+  --border: #f2e3dd;
+  --input: #ecdcd4;
+  --ring: #ae3115;
+  --radius: 1rem;
+}
+
+/* Expose tokens to Tailwind utilities (bg-primary, text-muted-foreground, ...). */
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-xl: calc(var(--radius) + 0.5rem);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

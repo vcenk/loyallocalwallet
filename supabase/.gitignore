@@ -1,0 +1,4 @@
+# Supabase CLI local artifacts (mirrors `supabase init` output)
+.branches
+.temp
+.env

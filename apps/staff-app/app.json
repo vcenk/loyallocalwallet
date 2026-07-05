@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "LoyalLocal Staff",
+    "slug": "loyallocal-staff",
+    "scheme": "loyallocal-staff",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#fff8f6"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Scan customer loyalty cards to add stamps and redeem rewards."
+      }
+    },
+    "android": {
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow LoyalLocal Staff to scan customer loyalty cards."
+        }
+      ]
+    ]
+  }
+}

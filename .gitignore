@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+.expo/
+.turbo/
+
+# Env / secrets (never commit real secrets)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Wallet credentials — MUST NOT be committed
+*.p12
+*.pem
+*.p8
+*.pkpass
+AuthKey_*.p8
+apple-wwdr*.cer
+*iam.gserviceaccount.com*.json
+google-wallet-service-account*.json
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
