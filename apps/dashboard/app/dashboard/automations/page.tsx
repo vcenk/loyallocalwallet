@@ -1,4 +1,4 @@
-import { Zap, Sparkles, HeartHandshake, Clock } from "lucide-react";
+import { Zap, Sparkles, HeartHandshake, Cake, Clock } from "lucide-react";
 import {
   PageHeader,
   Card,
@@ -26,6 +26,7 @@ const ICONS: Record<AutomationKey, React.ReactNode> = {
   welcome: <Sparkles className="h-5 w-5" />,
   almost_there: <Zap className="h-5 w-5" />,
   win_back: <HeartHandshake className="h-5 w-5" />,
+  birthday: <Cake className="h-5 w-5" />,
 };
 
 const BODY_CLASS =

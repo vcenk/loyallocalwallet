@@ -115,6 +115,33 @@ export default async function JoinPage({
           className={INPUT_CLASS}
         />
 
+        <div>
+          <p className="mb-1.5 text-xs text-muted-foreground">
+            Birthday (optional) — for a birthday treat 🎂
+          </p>
+          <div className="flex gap-2">
+            <select name="birthMonth" defaultValue="" className={INPUT_CLASS} aria-label="Birth month">
+              <option value="">Month</option>
+              {[
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December",
+              ].map((label, i) => (
+                <option key={label} value={i + 1}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <select name="birthDay" defaultValue="" className={INPUT_CLASS} aria-label="Birth day">
+              <option value="">Day</option>
+              {Array.from({ length: 31 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <label className="flex items-start gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"

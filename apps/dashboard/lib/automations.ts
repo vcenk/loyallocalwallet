@@ -8,7 +8,11 @@ type DbClient = SupabaseClient<Database>;
 
 const DAY = 86_400_000;
 
-export type AutomationKey = "welcome" | "almost_there" | "win_back";
+export type AutomationKey =
+  | "welcome"
+  | "almost_there"
+  | "win_back"
+  | "birthday";
 
 export interface AutomationDef {
   key: AutomationKey;
@@ -45,6 +49,14 @@ export const AUTOMATION_DEFS: AutomationDef[] = [
     defaultTitle: "We miss you",
     defaultBody: "Come back this week for a little something on us.",
     hasThreshold: true,
+  },
+  {
+    key: "birthday",
+    name: "Birthday treat",
+    description: "Sent on a customer's birthday (if they shared it at sign-up).",
+    timing: "Daily",
+    defaultTitle: "Happy birthday! 🎂",
+    defaultBody: "Enjoy a birthday treat on us this week — just show your card.",
   },
 ];
 
@@ -191,5 +203,52 @@ export async function runDailyAutomations(
       }
     }
   }
+
+  delivered += await runBirthdays(admin);
   return { businesses: (rows ?? []).length, delivered };
+}
+
+// Daily cron: birthday treat for customers whose birthday is today.
+async function runBirthdays(admin: DbClient): Promise<number> {
+  const now = new Date();
+  const month = now.getUTCMonth() + 1;
+  const day = now.getUTCDate();
+
+  const { data: rows } = await admin
+    .from("automations")
+    .select("business_id, title, body")
+    .eq("key", "birthday")
+    .eq("enabled", true);
+
+  let delivered = 0;
+  for (const row of rows ?? []) {
+    const { data: customers } = await admin
+      .from("customers")
+      .select("id")
+      .eq("business_id", row.business_id)
+      .eq("birth_month", month)
+      .eq("birth_day", day)
+      .eq("marketing_consent", true);
+
+    for (const c of customers ?? []) {
+      if (await sentWithin(admin, row.business_id, c.id, "birthday", 300)) continue;
+      const { data: passes } = await admin
+        .from("wallet_passes")
+        .select("id, status")
+        .eq("customer_id", c.id);
+      const primary = (passes ?? []).find(
+        (p) => p.status !== "voided" && p.status !== "deleted",
+      );
+      if (!primary) continue;
+      const ok = await notifyPass(admin, primary.id, {
+        title: row.title || "Happy birthday! 🎂",
+        body: row.body || "Enjoy a treat on us this week!",
+      });
+      if (ok) {
+        await record(admin, row.business_id, c.id, "birthday");
+        delivered += 1;
+      }
+    }
+  }
+  return delivered;
 }

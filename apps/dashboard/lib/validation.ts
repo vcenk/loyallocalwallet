@@ -87,4 +87,6 @@ export const enrollSchema = z.object({
     .optional(),
   phone: z.string().trim().max(30).optional(),
   platform: z.enum(["apple", "google"]),
+  birthMonth: z.coerce.number().int().min(1).max(12).optional(),
+  birthDay: z.coerce.number().int().min(1).max(31).optional(),
 });

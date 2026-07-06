@@ -11,7 +11,7 @@ import { MESSAGE_TITLE_MAX, MESSAGE_BODY_MAX } from "@/lib/campaigns";
 const CAN_EDIT = ["business_owner", "business_admin"];
 
 const schema = z.object({
-  key: z.enum(["welcome", "almost_there", "win_back"]),
+  key: z.enum(["welcome", "almost_there", "win_back", "birthday"]),
   enabled: z.boolean(),
   title: z.string().trim().min(1, "Add a title.").max(MESSAGE_TITLE_MAX),
   body: z.string().trim().min(1, "Add a message.").max(MESSAGE_BODY_MAX),

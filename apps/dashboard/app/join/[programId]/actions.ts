@@ -23,6 +23,8 @@ export async function enroll(formData: FormData) {
     email: formData.get("email") || "",
     phone: formData.get("phone") || undefined,
     platform: formData.get("platform"),
+    birthMonth: formData.get("birthMonth") || undefined,
+    birthDay: formData.get("birthDay") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -52,6 +54,8 @@ export async function enroll(formData: FormData) {
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
       marketing_consent: consent,
+      birth_month: parsed.data.birthMonth ?? null,
+      birth_day: parsed.data.birthDay ?? null,
     })
     .select("id")
     .single();
