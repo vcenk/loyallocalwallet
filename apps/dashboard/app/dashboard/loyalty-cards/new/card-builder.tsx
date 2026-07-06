@@ -1,6 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import {
+  Coffee,
+  Heart,
+  Crown,
+  Cake,
+  Ticket,
+  Users,
+  Zap,
+  Undo2,
+  Star,
+  QrCode,
+  Smartphone,
+  ScanLine,
+  Printer,
+} from "lucide-react";
 import { Button, Input, Label } from "@llw/ui";
 import {
   WalletCardPreview,
@@ -9,32 +25,69 @@ import {
   PATTERN_KEYS,
   patternStyle,
 } from "@/components/wallet-card-preview";
+import {
+  StepHeader,
+  Section,
+  SelectableCard,
+  PreviewTabs,
+  SuggestionPill,
+} from "@/components/builder-ui";
 import { createProgram } from "../actions";
 
-interface Template {
-  label: string;
-  name: string;
+const SELECT_CLASS =
+  "flex h-10 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
+
+type Template = {
+  key: string;
+  icon: typeof Coffee;
+  title: string;
   description: string;
+  tag: string;
+  name: string;
   stamps: string;
   reward: string;
-  rewardDetails: string;
+  details: string;
   bg: string;
   fg: string;
-  icon: string;
-  pattern?: string;
-}
+  stampIcon: string;
+  pattern: string;
+  suggestions: string[];
+};
 
 const TEMPLATES: Template[] = [
-  { label: "Café", name: "Coffee Rewards", description: "Earn a free coffee after 10 visits.", stamps: "10", reward: "Free coffee", rewardDetails: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", icon: "coffee", pattern: "dots" },
-  { label: "Coffee roaster", name: "Roaster Rewards", description: "Buy 10 bags, get 1 free.", stamps: "10", reward: "Free bag", rewardDetails: "One 250g bag.", bg: "#3f2d23", fg: "#ffffff", icon: "coffee" },
-  { label: "Bubble tea", name: "Bubble Tea Club", description: "Buy 8, get 1 free.", stamps: "8", reward: "Free drink", rewardDetails: "Any drink with a free topping.", bg: "#0f766e", fg: "#ffffff", icon: "sparkle" },
-  { label: "Bakery", name: "Bakery Rewards", description: "Collect 8 stamps for a treat.", stamps: "8", reward: "Free pastry", rewardDetails: "Any single pastry.", bg: "#b45309", fg: "#ffffff", icon: "cookie", pattern: "diagonal" },
-  { label: "Ice cream", name: "Scoop Club", description: "8 scoops, 1 free.", stamps: "8", reward: "Free scoop", rewardDetails: "Any single scoop.", bg: "#0e7490", fg: "#ffffff", icon: "ice-cream" },
-  { label: "Restaurant", name: "Diner Rewards", description: "Dine 8 times, get a free meal.", stamps: "8", reward: "Free meal", rewardDetails: "Up to $20 value.", bg: "#7c2d12", fg: "#ffffff", icon: "utensils", pattern: "grid" },
-  { label: "Food truck", name: "Street Eats Club", description: "Buy 6, get 1 free.", stamps: "6", reward: "Free item", rewardDetails: "Any main item.", bg: "#9a3412", fg: "#ffffff", icon: "utensils" },
-  { label: "Barber", name: "Barber Loyalty", description: "Visit 5 times, get $10 off.", stamps: "5", reward: "$10 off", rewardDetails: "Any haircut.", bg: "#111827", fg: "#ffffff", icon: "scissors", pattern: "vertical" },
-  { label: "Nail salon", name: "Nail Club", description: "5 visits, get $15 off.", stamps: "5", reward: "$15 off", rewardDetails: "Any service.", bg: "#be185d", fg: "#ffffff", icon: "heart" },
-  { label: "Pet groomer", name: "Groom Club", description: "5 grooms, get $20 off.", stamps: "5", reward: "$20 off", rewardDetails: "Any grooming.", bg: "#3f6212", fg: "#ffffff", icon: "paw" },
+  { key: "coffee", icon: Coffee, title: "Coffee Stamp Card", description: "Buy 9, get 1 free.", tag: "Cafés & bakeries", name: "Coffee Rewards", stamps: "9", reward: "Free coffee", details: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", stampIcon: "coffee", pattern: "dots", suggestions: ["Buy 9 coffees, get 1 free", "Free pastry after 5 visits", "Double stamps before 10 AM"] },
+  { key: "visits", icon: Heart, title: "Visit Rewards", description: "Reward customers after repeat visits.", tag: "Salons, barbers, groomers", name: "Visit Rewards", stamps: "6", reward: "$10 off", details: "Any service.", bg: "#be185d", fg: "#ffffff", stampIcon: "heart", pattern: "none", suggestions: ["6 visits, $10 off", "Free add-on after 5 visits", "VIP pricing after 10 visits"] },
+  { key: "vip", icon: Crown, title: "VIP Club", description: "Create Bronze, Silver, Gold levels.", tag: "Premium local shops", name: "VIP Club", stamps: "12", reward: "VIP perk", details: "A members-only treat.", bg: "#1e293b", fg: "#ffffff", stampIcon: "crown", pattern: "vertical", suggestions: ["Gold status after 12 visits", "Members-only offers", "Early access for VIPs"] },
+  { key: "birthday", icon: Cake, title: "Birthday Club", description: "Collect birthdays and send offers.", tag: "Restaurants & beauty", name: "Birthday Club", stamps: "8", reward: "Birthday treat", details: "On us, during your birthday week.", bg: "#b45309", fg: "#ffffff", stampIcon: "cake", pattern: "diagonal", suggestions: ["Free dessert on birthdays", "Birthday-week double stamps", "Bring a friend on your birthday"] },
+  { key: "prepaid", icon: Ticket, title: "Prepaid Pass", description: "Sell 5 or 10 visit packages.", tag: "Gyms, tutors, car washes", name: "Visit Pass", stamps: "10", reward: "Free visit", details: "Your 11th visit is on us.", bg: "#0e7490", fg: "#ffffff", stampIcon: "stamp", pattern: "grid", suggestions: ["Buy 10, get 1 free", "5-visit starter pack", "Monthly unlimited pass"] },
+  { key: "referral", icon: Users, title: "Referral Reward", description: "Reward customers who bring friends.", tag: "Growing businesses", name: "Referral Rewards", stamps: "5", reward: "Bonus reward", details: "You and your friend both win.", bg: "#3f6212", fg: "#ffffff", stampIcon: "sparkle", pattern: "crosshatch", suggestions: ["Both get a bonus stamp", "Refer 3 friends, get a reward", "Friends get a welcome bonus"] },
+];
+
+const PALETTES = [
+  { key: "Espresso", bg: "#4b2e2b", fg: "#ffffff" },
+  { key: "Matcha", bg: "#3f6212", fg: "#ffffff" },
+  { key: "Berry", bg: "#be185d", fg: "#ffffff" },
+  { key: "Midnight", bg: "#1e293b", fg: "#ffffff" },
+  { key: "Cream", bg: "#f3e9df", fg: "#4b2e2b" },
+  { key: "Ocean", bg: "#0e7490", fg: "#ffffff" },
+];
+
+const REWARD_MODELS = ["Stamp card", "Points", "Visit count", "VIP tier", "Prepaid pass"];
+const CARD_STYLES = ["Classic", "Modern", "Playful", "Minimal", "Premium"];
+const EXPIRY_OPTIONS = ["No expiry", "7 days", "30 days"];
+
+const AUTOMATION_HINTS = [
+  { icon: Zap, label: "Notify when 1 stamp away" },
+  { icon: Undo2, label: "Win-back after 30 days inactive" },
+  { icon: Cake, label: "Send birthday reward" },
+  { icon: Star, label: "Ask for a Google review after redemption" },
+];
+
+const LAUNCH_KIT = [
+  { icon: QrCode, label: "Customer signup QR" },
+  { icon: ScanLine, label: "Staff scanner link" },
+  { icon: Printer, label: "Printable counter sign" },
+  { icon: Smartphone, label: "Apple & Google Wallet buttons" },
 ];
 
 export function CardBuilder({
@@ -44,187 +97,268 @@ export function CardBuilder({
   businessName: string;
   logoUrl?: string | null;
 }) {
+  const [templateKey, setTemplateKey] = useState("coffee");
   const [name, setName] = useState("Coffee Rewards");
-  const [description, setDescription] = useState("Earn a free coffee after 10 visits.");
-  const [stamps, setStamps] = useState("10");
+  const [description] = useState("Earn a free coffee after 9 visits.");
+  const [stamps, setStamps] = useState("9");
   const [reward, setReward] = useState("Free coffee");
   const [rewardDetails, setRewardDetails] = useState("One regular coffee, any size.");
+  const [progressMsg, setProgressMsg] = useState("4 more visits until your free coffee.");
+  const [redemption, setRedemption] = useState("Show this card to staff when redeeming.");
   const [bg, setBg] = useState("#4b2e2b");
   const [fg, setFg] = useState("#ffffff");
   const [icon, setIcon] = useState("coffee");
   const [pattern, setPattern] = useState("dots");
+  const [tab, setTab] = useState("Wallet card");
+
+  const template = TEMPLATES.find((t) => t.key === templateKey) ?? TEMPLATES[0];
 
   function applyTemplate(t: Template) {
+    setTemplateKey(t.key);
     setName(t.name);
-    setDescription(t.description);
     setStamps(t.stamps);
     setReward(t.reward);
-    setRewardDetails(t.rewardDetails);
+    setRewardDetails(t.details);
     setBg(t.bg);
     setFg(t.fg);
-    setIcon(t.icon);
-    setPattern(t.pattern ?? "none");
+    setIcon(t.stampIcon);
+    setPattern(t.pattern);
   }
 
-  const required = Math.max(1, Math.min(Number(stamps) || 10, 12));
+  function applyPalette(p: (typeof PALETTES)[number]) {
+    setBg(p.bg);
+    setFg(p.fg);
+  }
+
+  const required = Math.max(1, Math.min(Number(stamps) || 9, 12));
   const previewFilled = Math.round(required * 0.6);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-5">
-      {/* Builder */}
-      <div className="space-y-8 lg:col-span-3">
-        {/* Templates */}
-        <div>
-          <p className="mb-3 text-sm font-semibold text-foreground">
-            Start from a template
-          </p>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
-            {TEMPLATES.map((t) => {
-              const TIcon = STAMP_ICONS[t.icon];
-              return (
-                <button
-                  key={t.label}
-                  type="button"
+    <div>
+      <StepHeader steps={["Reward", "Design", "Launch"]} current={0} />
+
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Builder */}
+        <div className="space-y-6 lg:col-span-3">
+          <Section title="Choose a campaign type" description="Start from a proven local-business template — you can tweak everything.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {TEMPLATES.map((t) => (
+                <SelectableCard
+                  key={t.key}
+                  icon={<t.icon className="h-5 w-5" />}
+                  title={t.title}
+                  description={t.description}
+                  tag={t.tag}
+                  selected={templateKey === t.key}
                   onClick={() => applyTemplate(t)}
-                  className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center transition-all hover:border-primary hover:shadow-md"
-                >
-                  <span
-                    className="flex h-12 w-full items-center justify-center rounded-xl"
-                    style={{ backgroundColor: t.bg, color: t.fg }}
-                  >
-                    <TIcon className="h-5 w-5" />
-                  </span>
-                  <span className="text-xs font-medium text-foreground">
-                    {t.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                />
+              ))}
+            </div>
+          </Section>
+
+          <form action={createProgram} className="space-y-6">
+            <input type="hidden" name="backgroundColor" value={bg} />
+            <input type="hidden" name="foregroundColor" value={fg} />
+            <input type="hidden" name="stampIcon" value={icon} />
+            <input type="hidden" name="pattern" value={pattern} />
+            <input type="hidden" name="description" value={description} />
+
+            <Section title="Reward setup" description="What customers earn, and how they earn it.">
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Card name</Label>
+                    <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rewardModel">Reward model</Label>
+                    <select id="rewardModel" name="rewardModel" defaultValue="Stamp card" className={SELECT_CLASS}>
+                      {REWARD_MODELS.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="stampsRequired">Stamps required</Label>
+                    <Input id="stampsRequired" name="stampsRequired" type="number" min={1} max={50} value={stamps} onChange={(e) => setStamps(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="expiry">Reward expiry</Label>
+                    <select id="expiry" name="expiry" defaultValue="No expiry" className={SELECT_CLASS}>
+                      {EXPIRY_OPTIONS.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="rewardTitle">Reward</Label>
+                  <Input id="rewardTitle" name="rewardTitle" value={reward} onChange={(e) => setReward(e.target.value)} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="rewardDescription">Reward details <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input id="rewardDescription" name="rewardDescription" value={rewardDetails} onChange={(e) => setRewardDetails(e.target.value)} />
+                </div>
+
+                <div className="rounded-2xl bg-muted/50 p-4">
+                  <p className="text-xs font-semibold text-foreground">Popular rewards for this type</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {template.suggestions.map((s) => (
+                      <SuggestionPill key={s} label={s} onClick={() => setReward(s)} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Customer experience" description="What customers read on their card.">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="progressMsg">Progress message</Label>
+                  <Input id="progressMsg" name="progressMessage" value={progressMsg} onChange={(e) => setProgressMsg(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="redemption">Redemption instruction</Label>
+                  <Input id="redemption" name="redemptionInstruction" value={redemption} onChange={(e) => setRedemption(e.target.value)} />
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Design studio" description="Match the card to your brand.">
+              <div className="space-y-5">
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Preset palettes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PALETTES.map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => applyPalette(p)}
+                        className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          bg === p.bg ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span className="h-4 w-4 rounded-full" style={{ backgroundColor: p.bg }} />
+                        {p.key}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-6">
+                  <label className="space-y-1.5">
+                    <span className="block text-xs font-medium text-muted-foreground">Background</span>
+                    <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="block text-xs font-medium text-muted-foreground">Text</span>
+                    <input type="color" value={fg} onChange={(e) => setFg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
+                  </label>
+                  <label className="min-w-[140px] flex-1 space-y-1.5">
+                    <span className="block text-xs font-medium text-muted-foreground">Card style</span>
+                    <select name="cardStyle" defaultValue="Modern" className={SELECT_CLASS}>
+                      {CARD_STYLES.map((s) => (<option key={s} value={s}>{s}</option>))}
+                    </select>
+                  </label>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Background pattern</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PATTERN_KEYS.map((p) => {
+                      const active = p === pattern;
+                      const st = patternStyle(p, fg);
+                      return (
+                        <button key={p} type="button" onClick={() => setPattern(p)} title={p}
+                          className={`relative h-10 w-14 overflow-hidden rounded-lg border transition-all ${active ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                          style={{ backgroundColor: bg }}>
+                          {st ? <span aria-hidden className="absolute inset-0" style={st} /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Stamp icon</p>
+                  <div className="flex flex-wrap gap-2">
+                    {STAMP_ICON_KEYS.map((key) => {
+                      const IconC = STAMP_ICONS[key];
+                      const active = key === icon;
+                      return (
+                        <button key={key} type="button" onClick={() => setIcon(key)}
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                          <IconC className="h-4 w-4" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit" size="lg">Create loyalty campaign</Button>
+              <Button type="submit" variant="outline">Save draft</Button>
+            </div>
+          </form>
         </div>
 
-        <form action={createProgram} className="space-y-5">
-          {/* hidden design values */}
-          <input type="hidden" name="backgroundColor" value={bg} />
-          <input type="hidden" name="foregroundColor" value={fg} />
-          <input type="hidden" name="stampIcon" value={icon} />
-          <input type="hidden" name="pattern" value={pattern} />
+        {/* Preview + launch */}
+        <div className="lg:col-span-2">
+          <div className="sticky top-24 space-y-4">
+            <PreviewTabs tabs={["Wallet card", "Signup", "Scanner", "Poster"]} active={tab} onChange={setTab} />
 
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Card name</Label>
-            <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
+            {tab === "Wallet card" ? (
+              <WalletCardPreview businessName={businessName} programName={name} rewardTitle={reward} stampsRequired={required} currentStamps={previewFilled} backgroundColor={bg} foregroundColor={fg} stampIcon={icon} pattern={pattern} logoUrl={logoUrl} />
+            ) : (
+              <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                {tab === "Signup" ? <QrCode className="h-8 w-8 text-primary" /> : tab === "Scanner" ? <ScanLine className="h-8 w-8 text-primary" /> : <Printer className="h-8 w-8 text-primary" />}
+                <p className="font-medium text-foreground">
+                  {tab === "Signup" ? "Customer signup page" : tab === "Scanner" ? "Staff scanner" : "Printable counter poster"}
+                </p>
+                <p>Ready as soon as you create the campaign.</p>
+              </div>
+            )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="description">
-              Description <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Input id="description" name="description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
+            <p className="text-center text-xs text-muted-foreground">
+              Customer sees: <span className="text-foreground">“{progressMsg}”</span>
+            </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="stampsRequired">Stamps required</Label>
-              <Input id="stampsRequired" name="stampsRequired" type="number" min={1} max={50} value={stamps} onChange={(e) => setStamps(e.target.value)} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="reward">Reward</Label>
-              <Input id="reward" name="rewardTitle" value={reward} onChange={(e) => setReward(e.target.value)} required />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="rewardDetails">
-              Reward details <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Input id="rewardDetails" name="rewardDescription" value={rewardDetails} onChange={(e) => setRewardDetails(e.target.value)} />
-          </div>
-
-          {/* Design */}
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm font-semibold text-foreground">Design</p>
-            <div className="mt-4 flex flex-wrap items-end gap-6">
-              <label className="space-y-1.5">
-                <span className="block text-xs font-medium text-muted-foreground">Background</span>
-                <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
-              </label>
-              <label className="space-y-1.5">
-                <span className="block text-xs font-medium text-muted-foreground">Text</span>
-                <input type="color" value={fg} onChange={(e) => setFg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
-              </label>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="mb-3 text-sm font-semibold text-foreground">Your launch kit</p>
+              <ul className="space-y-2.5">
+                {LAUNCH_KIT.map((k) => (
+                  <li key={k.label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <k.icon className="h-4 w-4 text-primary" />
+                    {k.label}
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <p className="mt-5 text-xs font-medium text-muted-foreground">Background pattern</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PATTERN_KEYS.map((p) => {
-                const active = p === pattern;
-                const st = patternStyle(p, fg);
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPattern(p)}
-                    title={p}
-                    className={`relative h-10 w-14 overflow-hidden rounded-lg border transition-all ${
-                      active ? "border-primary ring-2 ring-primary/30" : "border-border"
-                    }`}
-                    style={{ backgroundColor: bg }}
-                  >
-                    {st ? <span aria-hidden className="absolute inset-0" style={st} /> : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p className="mt-5 text-xs font-medium text-muted-foreground">Stamp icon</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {STAMP_ICON_KEYS.map((key) => {
-                const IconC = STAMP_ICONS[key];
-                const active = key === icon;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setIcon(key)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${
-                      active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <IconC className="h-4 w-4" />
-                  </button>
-                );
-              })}
+            <div className="rounded-2xl border border-border bg-gradient-to-br from-[#fce3dd] to-[#f6ddd8] p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">Recommended automations</p>
+              </div>
+              <ul className="space-y-2">
+                {AUTOMATION_HINTS.map((a) => (
+                  <li key={a.label} className="flex items-center gap-2.5 text-sm text-foreground/80">
+                    <a.icon className="h-4 w-4 text-primary" />
+                    {a.label}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/dashboard/automations" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+                Set up automations →
+              </Link>
             </div>
           </div>
-
-          <Button type="submit" size="lg" className="w-full">
-            Create card
-          </Button>
-        </form>
-      </div>
-
-      {/* Live preview */}
-      <div className="lg:col-span-2">
-        <div className="sticky top-24">
-          <p className="mb-3 text-sm font-semibold text-foreground">Live preview</p>
-          <WalletCardPreview
-            businessName={businessName}
-            programName={name}
-            rewardTitle={reward}
-            stampsRequired={required}
-            currentStamps={previewFilled}
-            backgroundColor={bg}
-            foregroundColor={fg}
-            stampIcon={icon}
-            pattern={pattern}
-            logoUrl={logoUrl}
-          />
-          <p className="mt-4 text-xs text-muted-foreground">
-            This is how your card appears in the dashboard. Wallet passes use the
-            solid background color.
-          </p>
         </div>
       </div>
     </div>

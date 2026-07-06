@@ -32,16 +32,35 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard/billing", label: "Billing", icon: Receipt },
 ];
 
-export function Sidebar() {
+export function Sidebar({
+  businessName = "Your business",
+  planLabel = "Trial plan",
+}: {
+  businessName?: string;
+  planLabel?: string;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-background px-4 py-6 md:flex print:hidden">
-      <div className="mb-8 px-2">
+      <div className="mb-6 px-2">
         <h1 className="text-xl font-extrabold tracking-tight text-primary">
           LoyalLocal
         </h1>
-        <p className="text-xs text-muted-foreground/80">Business Admin</p>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-border bg-card p-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+            {businessName.charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">
+              {businessName}
+            </p>
+            <p className="truncate text-xs text-muted-foreground">{planLabel}</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -71,11 +90,18 @@ export function Sidebar() {
 
       <div className="mt-auto space-y-2 border-t border-border pt-4">
         <Link
-          href="/dashboard/loyalty-cards/new"
-          className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98]"
+          href="/dashboard/campaigns/new"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
-          Create New Card
+          New Campaign
+        </Link>
+        <Link
+          href="/dashboard/loyalty-cards/new"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+        >
+          <CreditCard className="h-4 w-4" />
+          New Card
         </Link>
         <Link
           href="/dashboard/settings"

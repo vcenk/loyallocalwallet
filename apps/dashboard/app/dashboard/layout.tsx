@@ -27,16 +27,18 @@ export default async function DashboardLayout({
 
   const { data: business } = await supabase
     .from("businesses")
-    .select("name")
+    .select("name, plan_key")
     .eq("id", membership.business_id)
     .maybeSingle();
 
   const businessName = business?.name ?? "Your business";
   const initial = businessName.charAt(0).toUpperCase();
+  const planKey = business?.plan_key ?? "trial";
+  const planLabel = `${planKey.charAt(0).toUpperCase()}${planKey.slice(1)} plan`;
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar />
+      <Sidebar businessName={businessName} planLabel={planLabel} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 print:hidden">
           <div className="leading-tight">

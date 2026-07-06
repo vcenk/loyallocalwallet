@@ -103,6 +103,33 @@ export async function createCampaign(formData: FormData) {
     metadata: { audience: parsed.data.audienceKey, recipients: recipients.length },
   });
 
+  // "Send wallet campaign" — deliver immediately instead of saving a draft.
+  if (formData.get("sendNow") === "1") {
+    let delivered = 0;
+    for (const r of recipients) {
+      if (!r.walletPassId) continue;
+      const ok = await notifyPass(admin, r.walletPassId, {
+        title: parsed.data.messageTitle,
+        body: parsed.data.messageBody,
+      });
+      if (ok) delivered += 1;
+    }
+    await admin
+      .from("campaigns")
+      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .eq("id", campaign.id);
+    await admin.from("audit_logs").insert({
+      business_id: membership.businessId,
+      actor_user_id: membership.userId,
+      actor_staff_member_id: membership.staffMemberId,
+      action: "campaign_sent",
+      entity_type: "campaign",
+      entity_id: campaign.id,
+      metadata: { recipients: recipients.length, delivered },
+    });
+    redirect(`/dashboard/campaigns?sent=${delivered}`);
+  }
+
   redirect("/dashboard/campaigns?created=1");
 }
 

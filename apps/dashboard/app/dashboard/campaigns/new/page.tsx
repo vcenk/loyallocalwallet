@@ -37,8 +37,8 @@ export default async function NewCampaignPage({
   return (
     <div>
       <PageHeader
-        title="New campaign"
-        description="Pick a template, choose who it reaches, and send a wallet card update."
+        title="Create a customer campaign"
+        description="Bring customers back with wallet updates, rewards, and targeted offers."
         action={
           <Button asChild variant="outline">
             <Link href="/dashboard/campaigns">Cancel</Link>
