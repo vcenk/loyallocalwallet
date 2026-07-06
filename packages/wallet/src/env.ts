@@ -37,16 +37,40 @@ export function isAppleWalletConfigured(): boolean {
   );
 }
 
-// Loads a PEM/key: prefers a base64 env var, falls back to a file path.
-export function loadCert(base64Env: string, pathEnv: string): Buffer {
-  const b64 = process.env[base64Env];
-  if (b64) return Buffer.from(b64, "base64");
-  const filePath = process.env[pathEnv];
-  if (filePath) {
-    // Lazy require so bundlers don't complain in non-Node contexts.
-    return require("node:fs").readFileSync(filePath);
+// Resolves an env value that may be: raw PEM text, a base64 blob, or a file
+// path. We auto-detect so it doesn't matter whether the value was pasted into
+// the *_BASE64 or the *_PATH variable (a common Vercel setup mistake that made
+// passkit-generator try to open a base64 string as a filename — ENAMETOOLONG).
+function resolveCertValue(value: string): Buffer {
+  const trimmed = value.trim();
+
+  // Already PEM/plain text? Use as-is.
+  if (trimmed.includes("-----BEGIN")) {
+    return Buffer.from(trimmed, "utf8");
   }
-  throw new Error(`Missing ${base64Env} or ${pathEnv}`);
+
+  // Looks like a base64 blob (long, single-token, base64 alphabet only)?
+  const looksBase64 =
+    trimmed.length > 100 && /^[A-Za-z0-9+/=\r\n]+$/.test(trimmed);
+  if (looksBase64) {
+    const decoded = Buffer.from(trimmed, "base64");
+    // If it decodes to PEM text, we guessed right.
+    if (decoded.includes("-----BEGIN")) return decoded;
+    // Otherwise it may still be a DER/base64 cert — return the decoded bytes.
+    return decoded;
+  }
+
+  // Otherwise treat it as a filesystem path. Lazy require so bundlers don't
+  // complain in non-Node contexts.
+  return require("node:fs").readFileSync(trimmed);
+}
+
+// Loads a PEM/key: prefers a base64 env var, falls back to a file path. Both
+// are passed through the same auto-detecting resolver.
+export function loadCert(base64Env: string, pathEnv: string): Buffer {
+  const value = process.env[base64Env] || process.env[pathEnv];
+  if (!value) throw new Error(`Missing ${base64Env} or ${pathEnv}`);
+  return resolveCertValue(value);
 }
 
 export function googleConfig() {
