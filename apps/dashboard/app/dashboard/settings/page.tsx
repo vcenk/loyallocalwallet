@@ -23,11 +23,13 @@ export default async function SettingsPage({
 
   const supabase = await createClient();
   const membership = await getActiveMembership(supabase);
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
+  const { data: business } = membership
+    ? await supabase
+        .from("businesses")
+        .select("*")
+        .eq("id", membership.businessId)
+        .maybeSingle()
+    : { data: null };
 
   const canEdit =
     membership?.role === "business_owner" ||

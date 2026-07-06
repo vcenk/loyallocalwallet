@@ -63,6 +63,18 @@ export async function uploadLogo(formData: FormData) {
   if (file.size > 2 * 1024 * 1024) settingsError("Image must be under 2MB.");
 
   const admin = createAdminClient();
+
+  // Ensure the public "logos" bucket exists (created on first upload so no
+  // manual Supabase setup is required). Ignore "already exists" errors.
+  const { error: bucketError } = await admin.storage.createBucket("logos", {
+    public: true,
+    fileSizeLimit: "2MB",
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/svg+xml"],
+  });
+  if (bucketError && !/exist/i.test(bucketError.message)) {
+    settingsError(bucketError.message);
+  }
+
   const ext = (file.name.split(".").pop() || "png")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
