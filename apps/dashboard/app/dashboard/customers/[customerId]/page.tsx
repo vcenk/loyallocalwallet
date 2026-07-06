@@ -1,35 +1,49 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Stamp, Gift } from "lucide-react";
 import {
-  PageHeader,
-  Button,
-  Badge,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardPreview,
-} from "@llw/ui";
+  ArrowLeft,
+  Stamp,
+  Gift,
+  Sparkles,
+  RotateCcw,
+  Calendar,
+} from "lucide-react";
+import { PageHeader, Button, Badge, Card, CardContent } from "@llw/ui";
 import { calculateProgress, BONUS_STAMP_REASONS } from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
+import { WalletCardPreview } from "@/components/wallet-card-preview";
 import { addStamp, redeemReward } from "./actions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
 
-const fmt = new Intl.DateTimeFormat("en-US", {
+const dtFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
   hour: "numeric",
   minute: "2-digit",
 });
-function formatDateTime(iso: string | null) {
-  return iso ? fmt.format(new Date(iso)) : "—";
+const dateFmt = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+type TimelineItem = {
+  id: string;
+  at: string;
+  text: string;
+  kind: "earn" | "bonus" | "redeem" | "reset" | "other";
+};
+
+function eventKind(eventType: string, quantity: number): TimelineItem["kind"] {
+  if (eventType === "earn") return "earn";
+  if (eventType === "bonus") return "bonus";
+  if (eventType === "adjustment") return quantity < 0 ? "reset" : "other";
+  return "other";
 }
 
-function stampEventLabel(eventType: string, quantity: number, reason: string | null) {
+function eventLabel(eventType: string, quantity: number, reason: string | null) {
   switch (eventType) {
     case "earn":
       return "Earned a stamp";
@@ -43,6 +57,14 @@ function stampEventLabel(eventType: string, quantity: number, reason: string | n
       return "Activity";
   }
 }
+
+const KIND_STYLE: Record<TimelineItem["kind"], { icon: React.ReactNode; cls: string }> = {
+  earn: { icon: <Stamp className="h-4 w-4" />, cls: "bg-primary/10 text-primary" },
+  bonus: { icon: <Sparkles className="h-4 w-4" />, cls: "bg-amber-100 text-amber-700" },
+  redeem: { icon: <Gift className="h-4 w-4" />, cls: "bg-green-100 text-green-700" },
+  reset: { icon: <RotateCcw className="h-4 w-4" />, cls: "bg-green-100 text-green-700" },
+  other: { icon: <Stamp className="h-4 w-4" />, cls: "bg-muted text-muted-foreground" },
+};
 
 export default async function CustomerDetailPage({
   params,
@@ -62,6 +84,12 @@ export default async function CustomerDetailPage({
     .maybeSingle();
   if (!customer) notFound();
 
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("name, logo_url")
+    .eq("id", customer.business_id)
+    .maybeSingle();
+
   const { data: passes } = await supabase
     .from("wallet_passes")
     .select("*")
@@ -70,47 +98,23 @@ export default async function CustomerDetailPage({
   const pass = passes?.[0] ?? null;
 
   let progress: ReturnType<typeof calculateProgress> | null = null;
-  let events: {
-    id: string;
-    created_at: string;
-    event_type: string;
-    quantity: number;
-    reason: string | null;
-  }[] = [];
-  let redemptions: {
-    id: string;
-    redeemed_at: string;
-    reward_title: string;
-  }[] = [];
+  let events: { id: string; created_at: string; event_type: string; quantity: number; reason: string | null }[] = [];
+  let redemptions: { id: string; redeemed_at: string; reward_title: string }[] = [];
   let programName = "";
   let rewardTitle = "";
   let stampsRequired = 10;
   let bg = "#ae3115";
   let fg = "#ffffff";
+  let stampIcon = "star";
+  let pattern = "none";
 
   if (pass) {
     const [{ data: prog }, { data: ev }, { data: red }, { data: design }] =
       await Promise.all([
-        supabase
-          .from("loyalty_programs")
-          .select("*")
-          .eq("id", pass.program_id)
-          .maybeSingle(),
-        supabase
-          .from("stamp_events")
-          .select("id, created_at, event_type, quantity, reason")
-          .eq("wallet_pass_id", pass.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("reward_redemptions")
-          .select("id, redeemed_at, reward_title")
-          .eq("wallet_pass_id", pass.id)
-          .order("redeemed_at", { ascending: false }),
-        supabase
-          .from("card_designs")
-          .select("background_color, foreground_color")
-          .eq("program_id", pass.program_id)
-          .maybeSingle(),
+        supabase.from("loyalty_programs").select("*").eq("id", pass.program_id).maybeSingle(),
+        supabase.from("stamp_events").select("id, created_at, event_type, quantity, reason").eq("wallet_pass_id", pass.id).order("created_at", { ascending: false }),
+        supabase.from("reward_redemptions").select("id, redeemed_at, reward_title").eq("wallet_pass_id", pass.id).order("redeemed_at", { ascending: false }),
+        supabase.from("card_designs").select("*").eq("program_id", pass.program_id).maybeSingle(),
       ]);
 
     events = ev ?? [];
@@ -119,33 +123,35 @@ export default async function CustomerDetailPage({
       programName = prog.name;
       rewardTitle = prog.reward_title;
       stampsRequired = prog.stamps_required ?? 10;
-      progress = calculateProgress({
-        programType: prog.program_type,
-        stampsRequired,
-        events,
-      });
+      progress = calculateProgress({ programType: prog.program_type, stampsRequired, events });
     }
     if (design) {
       bg = design.background_color ?? bg;
       fg = design.foreground_color ?? fg;
+      stampIcon = design.stamp_icon ?? stampIcon;
+      pattern = design.pattern ?? pattern;
     }
   }
 
   const name = `${customer.first_name ?? "Guest"} ${customer.last_name ?? ""}`.trim();
   const contact = customer.email ?? customer.phone ?? "No contact info";
 
-  const timeline = [
+  const timeline: TimelineItem[] = [
     ...events.map((e) => ({
       id: `e-${e.id}`,
       at: e.created_at,
-      text: stampEventLabel(e.event_type, e.quantity, e.reason),
+      text: eventLabel(e.event_type, e.quantity, e.reason),
+      kind: eventKind(e.event_type, e.quantity),
     })),
     ...redemptions.map((r) => ({
       id: `r-${r.id}`,
       at: r.redeemed_at,
       text: `Redeemed ${r.reward_title}`,
+      kind: "redeem" as const,
     })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
+
+  const rewardReady = (progress?.rewardsAvailable ?? 0) > 0;
 
   return (
     <div>
@@ -162,21 +168,15 @@ export default async function CustomerDetailPage({
         }
       />
 
-      {error ? (
-        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-      {saved ? (
-        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
-          Stamp added.
-        </p>
-      ) : null}
-      {redeemed ? (
-        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
-          Reward redeemed.
-        </p>
-      ) : null}
+      <p className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
+        <Calendar className="h-3.5 w-3.5" />
+        Joined {dateFmt.format(new Date(customer.first_seen_at))}
+        {customer.marketing_consent ? " · opted in to offers" : ""}
+      </p>
+
+      {error ? <Banner tone="red">{error}</Banner> : null}
+      {saved ? <Banner tone="green">Stamp added.</Banner> : null}
+      {redeemed ? <Banner tone="green">Reward redeemed.</Banner> : null}
 
       {!pass || !progress ? (
         <Card>
@@ -187,52 +187,68 @@ export default async function CustomerDetailPage({
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
+            {/* Actions */}
             <Card>
-              <CardHeader>
-                <CardTitle>{programName}</CardTitle>
-                <CardDescription>
-                  {progress.rewardsAvailable > 0
-                    ? `${progress.rewardsAvailable} reward${progress.rewardsAvailable > 1 ? "s" : ""} ready to redeem`
-                    : `${progress.towardNext} of ${progress.required} stamps toward ${rewardTitle}`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  {progress.rewardsAvailable > 0 ? (
-                    <Badge variant="success">Reward ready</Badge>
+              <CardContent className="p-6 pt-6">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {programName}
+                    </p>
+                    {rewardReady ? (
+                      <p className="mt-1 font-display text-3xl font-bold text-[color:var(--success)]">
+                        Reward ready 🎉
+                      </p>
+                    ) : (
+                      <p className="mt-1 font-display text-3xl font-bold text-foreground">
+                        {progress.towardNext}
+                        <span className="text-xl text-muted-foreground">
+                          {" "}
+                          / {progress.required}
+                        </span>
+                      </p>
+                    )}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {rewardReady
+                        ? rewardTitle
+                        : `stamps toward ${rewardTitle} · ${progress.total} lifetime`}
+                    </p>
+                  </div>
+                  {rewardReady ? (
+                    <Badge variant="success">Ready</Badge>
                   ) : null}
-                  <span className="text-sm text-muted-foreground">
-                    {progress.total} total stamps
-                  </span>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-6 flex flex-wrap gap-3">
                   <form action={addStamp}>
                     <input type="hidden" name="passId" value={pass.id} />
                     <input type="hidden" name="customerId" value={customer.id} />
                     <input type="hidden" name="eventType" value="earn" />
-                    <Button type="submit">
+                    <Button type="submit" size="lg">
                       <Stamp className="h-4 w-4" />
                       Add stamp
                     </Button>
                   </form>
 
-                  <form
-                    action={redeemReward}
-                    className={progress.rewardsAvailable > 0 ? "" : "hidden"}
-                  >
-                    <input type="hidden" name="passId" value={pass.id} />
-                    <input type="hidden" name="customerId" value={customer.id} />
-                    <Button type="submit" variant="outline">
-                      <Gift className="h-4 w-4" />
-                      Redeem reward
-                    </Button>
-                  </form>
+                  {rewardReady ? (
+                    <form action={redeemReward}>
+                      <input type="hidden" name="passId" value={pass.id} />
+                      <input type="hidden" name="customerId" value={customer.id} />
+                      <Button
+                        type="submit"
+                        size="lg"
+                        className="bg-[color:var(--success)] text-white hover:brightness-110"
+                      >
+                        <Gift className="h-4 w-4" />
+                        Redeem reward
+                      </Button>
+                    </form>
+                  ) : null}
                 </div>
 
                 <form
                   action={addStamp}
-                  className="flex flex-wrap items-end gap-2 border-t border-border pt-4"
+                  className="mt-6 flex flex-wrap items-end gap-3 border-t border-border pt-6"
                 >
                   <input type="hidden" name="passId" value={pass.id} />
                   <input type="hidden" name="customerId" value={customer.id} />
@@ -250,55 +266,79 @@ export default async function CustomerDetailPage({
                     </select>
                   </div>
                   <Button type="submit" variant="outline">
+                    <Sparkles className="h-4 w-4" />
                     Add bonus
                   </Button>
                 </form>
               </CardContent>
             </Card>
 
+            {/* Activity */}
             <Card>
-              <CardHeader>
-                <CardTitle>Activity</CardTitle>
-                <CardDescription>Stamps and redemptions, newest first.</CardDescription>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-6 pt-6">
+                <p className="font-semibold text-foreground">Activity</p>
                 {timeline.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No activity yet.</p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No activity yet.
+                  </p>
                 ) : (
-                  <ul className="divide-y divide-border">
-                    {timeline.map((t) => (
-                      <li
-                        key={t.id}
-                        className="flex items-center justify-between py-3 text-sm"
-                      >
-                        <span className="text-foreground">{t.text}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDateTime(t.at)}
-                        </span>
-                      </li>
-                    ))}
+                  <ul className="mt-4 space-y-4">
+                    {timeline.map((t) => {
+                      const s = KIND_STYLE[t.kind];
+                      return (
+                        <li key={t.id} className="flex items-center gap-3">
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${s.cls}`}
+                          >
+                            {s.icon}
+                          </span>
+                          <span className="flex-1 text-sm text-foreground">
+                            {t.text}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {dtFmt.format(new Date(t.at))}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </CardContent>
             </Card>
           </div>
 
+          {/* Wallet card */}
           <div className="lg:col-span-1">
-            <p className="mb-2 text-sm font-medium text-muted-foreground">
+            <p className="mb-3 text-sm font-medium text-muted-foreground">
               Wallet card
             </p>
-            <CardPreview
-              businessName=""
+            <WalletCardPreview
+              businessName={business?.name ?? ""}
               programName={programName}
               rewardTitle={rewardTitle}
               stampsRequired={stampsRequired}
               currentStamps={progress.total}
               backgroundColor={bg}
               foregroundColor={fg}
+              stampIcon={stampIcon}
+              pattern={pattern}
+              logoUrl={business?.logo_url}
             />
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function Banner({
+  tone,
+  children,
+}: {
+  tone: "green" | "red";
+  children: React.ReactNode;
+}) {
+  const cls =
+    tone === "green" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700";
+  return <p className={`mb-4 rounded-xl px-4 py-3 text-sm ${cls}`}>{children}</p>;
 }
