@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Clock, Moon, AlertTriangle } from "lucide-react";
 import {
   PageHeader,
   Card,
@@ -20,6 +20,40 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+const AVATAR_COLORS = [
+  "#ae3115",
+  "#c0421e",
+  "#b45309",
+  "#0f766e",
+  "#be185d",
+  "#7c2d12",
+  "#3f6212",
+  "#0e7490",
+];
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const str = `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+  return str || "G";
+}
+
+function avatarColor(seed: string) {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+// Severity styling for an inactivity bucket, keyed by its min-days threshold.
+function bucketStyle(min: number) {
+  if (min >= 60)
+    return { icon: <AlertTriangle className="h-4 w-4" />, cls: "bg-red-100 text-red-600", num: "text-red-600" };
+  if (min >= 30)
+    return { icon: <Moon className="h-4 w-4" />, cls: "bg-orange-100 text-orange-600", num: "text-orange-600" };
+  if (min >= 21)
+    return { icon: <Clock className="h-4 w-4" />, cls: "bg-amber-100 text-amber-600", num: "text-amber-600" };
+  return { icon: <Clock className="h-4 w-4" />, cls: "bg-muted text-muted-foreground", num: "text-foreground" };
+}
+
 export default async function AnalyticsPage() {
   const supabase = await createClient();
   const membership = await getActiveMembership(supabase);
@@ -39,15 +73,27 @@ export default async function AnalyticsPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {buckets.map((b) => (
-          <div
-            key={b.label}
-            className="rounded-2xl border border-border bg-card p-5 shadow-sm"
-          >
-            <p className="text-2xl font-bold text-foreground">{b.count}</p>
-            <p className="text-xs text-muted-foreground">inactive {b.label}</p>
-          </div>
-        ))}
+        {buckets.map((b) => {
+          const s = bucketStyle(b.min);
+          return (
+            <div
+              key={b.label}
+              className="rounded-2xl border border-border bg-card p-5 shadow-sm"
+            >
+              <span
+                className={`mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg ${s.cls}`}
+              >
+                {s.icon}
+              </span>
+              <p className={`font-display text-3xl font-extrabold ${s.num}`}>
+                {b.count}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                inactive {b.label}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {winBack ? (
@@ -109,17 +155,27 @@ export default async function AnalyticsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {customers.map((c) => (
-                    <tr key={c.id} className="hover:bg-muted/50">
+                    <tr key={c.id} className="group transition-colors hover:bg-muted/50">
                       <td className="px-6 py-3">
                         <Link
                           href={`/dashboard/customers/${c.id}`}
-                          className="font-medium text-foreground hover:text-primary hover:underline"
+                          className="flex items-center gap-3"
                         >
-                          {c.name}
+                          <span
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                            style={{ backgroundColor: avatarColor(c.name) }}
+                          >
+                            {initials(c.name)}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-foreground group-hover:text-primary">
+                              {c.name}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {c.contact}
+                            </span>
+                          </span>
                         </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {c.contact}
-                        </p>
                       </td>
                       <td className="px-6 py-3 text-muted-foreground">
                         {dateFmt.format(new Date(c.lastActivity))}
@@ -131,10 +187,14 @@ export default async function AnalyticsPage() {
                           {c.daysInactive} days
                         </Badge>
                       </td>
-                      <td className="px-6 py-3 text-muted-foreground">
-                        {c.rewardsAvailable > 0
-                          ? "Reward ready"
-                          : `${c.total} stamps`}
+                      <td className="px-6 py-3">
+                        {c.rewardsAvailable > 0 ? (
+                          <Badge variant="success">Reward ready</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {c.total} stamps
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
