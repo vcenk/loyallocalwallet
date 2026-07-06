@@ -39,6 +39,8 @@ export const designSchema = z.object({
   foregroundColor: hexColor,
   stampIcon: z.string().trim().max(24).optional(),
   pattern: z.string().trim().max(24).optional(),
+  cardStyle: z.string().trim().max(24).optional(),
+  stampStyle: z.string().trim().max(24).optional(),
 });
 
 export const businessProfileSchema = z.object({

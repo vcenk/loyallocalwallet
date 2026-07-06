@@ -23,6 +23,8 @@ import {
   STAMP_ICONS,
   STAMP_ICON_KEYS,
   PATTERN_KEYS,
+  CARD_STYLE_KEYS,
+  STAMP_STYLE_KEYS,
   patternStyle,
 } from "@/components/wallet-card-preview";
 import {
@@ -73,8 +75,16 @@ const PALETTES = [
 ];
 
 const REWARD_MODELS = ["Stamp card", "Points", "Visit count", "VIP tier", "Prepaid pass"];
-const CARD_STYLES = ["Classic", "Modern", "Playful", "Minimal", "Premium"];
 const EXPIRY_OPTIONS = ["No expiry", "7 days", "30 days"];
+const STAMP_STYLE_LABEL: Record<string, string> = {
+  circles: "Circles",
+  pills: "Pills",
+  progress: "Progress bar",
+};
+
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 const AUTOMATION_HINTS = [
   { icon: Zap, label: "Notify when 1 stamp away" },
@@ -109,6 +119,8 @@ export function CardBuilder({
   const [fg, setFg] = useState("#ffffff");
   const [icon, setIcon] = useState("coffee");
   const [pattern, setPattern] = useState("dots");
+  const [cardStyle, setCardStyle] = useState("modern");
+  const [stampStyle, setStampStyle] = useState("circles");
   const [tab, setTab] = useState("Wallet card");
 
   const template = TEMPLATES.find((t) => t.key === templateKey) ?? TEMPLATES[0];
@@ -161,6 +173,8 @@ export function CardBuilder({
             <input type="hidden" name="foregroundColor" value={fg} />
             <input type="hidden" name="stampIcon" value={icon} />
             <input type="hidden" name="pattern" value={pattern} />
+            <input type="hidden" name="cardStyle" value={cardStyle} />
+            <input type="hidden" name="stampStyle" value={stampStyle} />
             <input type="hidden" name="description" value={description} />
 
             <Section title="Reward setup" description="What customers earn, and how they earn it.">
@@ -260,10 +274,33 @@ export function CardBuilder({
                   </label>
                   <label className="min-w-[140px] flex-1 space-y-1.5">
                     <span className="block text-xs font-medium text-muted-foreground">Card style</span>
-                    <select name="cardStyle" defaultValue="Modern" className={SELECT_CLASS}>
-                      {CARD_STYLES.map((s) => (<option key={s} value={s}>{s}</option>))}
+                    <select value={cardStyle} onChange={(e) => setCardStyle(e.target.value)} className={SELECT_CLASS}>
+                      {CARD_STYLE_KEYS.map((s) => (<option key={s} value={s}>{cap(s)}</option>))}
                     </select>
                   </label>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">Stamp style</p>
+                  <div className="flex flex-wrap gap-2">
+                    {STAMP_STYLE_KEYS.map((s) => {
+                      const active = s === stampStyle;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setStampStyle(s)}
+                          className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                            active
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {STAMP_STYLE_LABEL[s]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div>
@@ -314,7 +351,7 @@ export function CardBuilder({
             <PreviewTabs tabs={["Wallet card", "Signup", "Scanner", "Poster"]} active={tab} onChange={setTab} />
 
             {tab === "Wallet card" ? (
-              <WalletCardPreview businessName={businessName} programName={name} rewardTitle={reward} stampsRequired={required} currentStamps={previewFilled} backgroundColor={bg} foregroundColor={fg} stampIcon={icon} pattern={pattern} logoUrl={logoUrl} />
+              <WalletCardPreview businessName={businessName} programName={name} rewardTitle={reward} stampsRequired={required} currentStamps={previewFilled} backgroundColor={bg} foregroundColor={fg} stampIcon={icon} pattern={pattern} cardStyle={cardStyle} stampStyle={stampStyle} logoUrl={logoUrl} />
             ) : (
               <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
                 {tab === "Signup" ? <QrCode className="h-8 w-8 text-primary" /> : tab === "Scanner" ? <ScanLine className="h-8 w-8 text-primary" /> : <Printer className="h-8 w-8 text-primary" />}

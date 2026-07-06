@@ -18,6 +18,8 @@ import {
   WalletCardPreview,
   STAMP_ICON_KEYS,
   PATTERN_KEYS,
+  CARD_STYLE_KEYS,
+  STAMP_STYLE_KEYS,
 } from "@/components/wallet-card-preview";
 import { updateProgram, updateDesign } from "../actions";
 
@@ -59,6 +61,8 @@ export default async function EditProgramPage({
   const fg = design?.foreground_color ?? "#ffffff";
   const stampIcon = design?.stamp_icon ?? "star";
   const cardPattern = design?.pattern ?? "none";
+  const cardStyle = design?.card_style ?? "modern";
+  const stampStyle = design?.stamp_style ?? "circles";
   const stampsRequired = program.stamps_required ?? 10;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -239,6 +243,24 @@ export default async function EditProgramPage({
                     ))}
                   </select>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cardStyle">Card style</Label>
+                    <select id="cardStyle" name="cardStyle" defaultValue={cardStyle} className={SELECT_CLASS}>
+                      {CARD_STYLE_KEYS.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="stampStyle">Stamp style</Label>
+                    <select id="stampStyle" name="stampStyle" defaultValue={stampStyle} className={SELECT_CLASS}>
+                      {STAMP_STYLE_KEYS.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <Button type="submit" variant="outline">
                   Save design
                 </Button>
@@ -262,6 +284,8 @@ export default async function EditProgramPage({
               foregroundColor={fg}
               stampIcon={stampIcon}
               pattern={cardPattern}
+              cardStyle={cardStyle}
+              stampStyle={stampStyle}
               logoUrl={business?.logo_url}
             />
           </div>

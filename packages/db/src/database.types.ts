@@ -391,6 +391,8 @@ export type Database = {
           label_color: string | null;
           stamp_icon: string | null;
           pattern: string | null;
+          card_style: string | null;
+          stamp_style: string | null;
           apple_pass_type_identifier: string | null;
           google_class_id: string | null;
           created_at: string;
@@ -407,6 +409,8 @@ export type Database = {
           label_color?: string | null;
           stamp_icon?: string | null;
           pattern?: string | null;
+          card_style?: string | null;
+          stamp_style?: string | null;
           apple_pass_type_identifier?: string | null;
           google_class_id?: string | null;
           created_at?: string;
@@ -423,6 +427,8 @@ export type Database = {
           label_color?: string | null;
           stamp_icon?: string | null;
           pattern?: string | null;
+          card_style?: string | null;
+          stamp_style?: string | null;
           apple_pass_type_identifier?: string | null;
           google_class_id?: string | null;
           created_at?: string;

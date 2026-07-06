@@ -81,6 +81,27 @@ export function patternStyle(
   }
 }
 
+export const CARD_STYLE_KEYS = [
+  "classic",
+  "modern",
+  "playful",
+  "minimal",
+  "premium",
+];
+export const STAMP_STYLE_KEYS = ["circles", "pills", "progress"];
+
+// Per-style visual treatment for the card shell.
+const CARD_STYLES: Record<
+  string,
+  { radius: string; shadow: string; sheen: boolean; ring: string }
+> = {
+  classic: { radius: "1.25rem", shadow: "0 12px 30px rgba(38,24,21,0.25)", sheen: true, ring: "none" },
+  modern: { radius: "1.75rem", shadow: "0 22px 48px rgba(38,24,21,0.35)", sheen: true, ring: "none" },
+  playful: { radius: "2.4rem", shadow: "0 18px 40px rgba(38,24,21,0.30)", sheen: true, ring: "none" },
+  minimal: { radius: "0.9rem", shadow: "0 6px 16px rgba(38,24,21,0.14)", sheen: false, ring: "none" },
+  premium: { radius: "1.5rem", shadow: "0 26px 60px rgba(38,24,21,0.45)", sheen: true, ring: "inset 0 0 0 1.5px rgba(255,255,255,0.28)" },
+};
+
 export interface WalletCardPreviewProps {
   businessName: string;
   programName: string;
@@ -91,6 +112,8 @@ export interface WalletCardPreviewProps {
   foregroundColor?: string;
   stampIcon?: string;
   pattern?: string;
+  cardStyle?: string;
+  stampStyle?: string;
   logoUrl?: string | null;
 }
 
@@ -105,30 +128,39 @@ export function WalletCardPreview({
   foregroundColor = "#ffffff",
   stampIcon = "star",
   pattern = "none",
+  cardStyle = "modern",
+  stampStyle = "circles",
   logoUrl,
 }: WalletCardPreviewProps) {
   const Icon = STAMP_ICONS[stampIcon] ?? Star;
   const total = Math.max(1, Math.min(stampsRequired || 1, 12));
   const filled = Math.max(0, Math.min(currentStamps, total));
   const overlay = patternStyle(pattern, foregroundColor);
+  const shell = CARD_STYLES[cardStyle] ?? CARD_STYLES.modern;
 
   return (
     <div
-      className="relative w-full max-w-sm overflow-hidden rounded-[1.75rem] p-6 shadow-2xl"
-      style={{ backgroundColor, color: foregroundColor }}
+      className="relative w-full max-w-sm overflow-hidden p-6"
+      style={{
+        backgroundColor,
+        color: foregroundColor,
+        borderRadius: shell.radius,
+        boxShadow: shell.ring === "none" ? shell.shadow : `${shell.shadow}, ${shell.ring}`,
+      }}
     >
       {overlay ? (
         <div aria-hidden className="pointer-events-none absolute inset-0" style={overlay} />
       ) : null}
-      {/* sheen */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%)",
-        }}
-      />
+      {shell.sheen ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%)",
+          }}
+        />
+      ) : null}
 
       <div className="relative z-10">
         <div className="flex items-center justify-between">
@@ -156,27 +188,47 @@ export function WalletCardPreview({
           {programName || "Loyalty card"}
         </p>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          {Array.from({ length: total }).map((_, i) => {
-            const on = i < filled;
-            return (
-              <span
-                key={i}
-                className="flex h-7 w-7 items-center justify-center rounded-full border transition-colors"
+        {stampStyle === "progress" ? (
+          <div className="mt-5">
+            <div
+              className="h-3.5 w-full overflow-hidden rounded-full"
+              style={{ backgroundColor: `${foregroundColor}2e` }}
+            >
+              <div
+                className="h-full rounded-full transition-all"
                 style={{
-                  borderColor: foregroundColor,
-                  backgroundColor: on ? foregroundColor : "transparent",
-                  opacity: on ? 1 : 0.55,
+                  width: `${(filled / total) * 100}%`,
+                  backgroundColor: foregroundColor,
                 }}
-              >
-                <Icon
-                  className="h-3.5 w-3.5"
-                  style={{ color: on ? backgroundColor : foregroundColor }}
-                />
-              </span>
-            );
-          })}
-        </div>
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {Array.from({ length: total }).map((_, i) => {
+              const on = i < filled;
+              const pill = stampStyle === "pills";
+              return (
+                <span
+                  key={i}
+                  className={`flex items-center justify-center border transition-colors ${
+                    pill ? "h-7 min-w-[2.5rem] rounded-full px-2" : "h-7 w-7 rounded-full"
+                  }`}
+                  style={{
+                    borderColor: foregroundColor,
+                    backgroundColor: on ? foregroundColor : "transparent",
+                    opacity: on ? 1 : 0.55,
+                  }}
+                >
+                  <Icon
+                    className="h-3.5 w-3.5"
+                    style={{ color: on ? backgroundColor : foregroundColor }}
+                  />
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         <div className="mt-5 flex items-center justify-between text-sm">
           <span className="opacity-85">
