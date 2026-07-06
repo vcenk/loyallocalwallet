@@ -13,6 +13,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
-config.resolver.disableHierarchicalLookup = true;
+// Keep hierarchical lookup ENABLED so Metro can resolve packages' own
+// (transitive) dependencies inside pnpm's isolated node_modules layout.
 
 module.exports = config;

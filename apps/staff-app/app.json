@@ -14,7 +14,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "co.loyallocal.staff",
       "infoPlist": {
-        "NSCameraUsageDescription": "Scan customer loyalty cards to add stamps and redeem rewards."
+        "NSCameraUsageDescription": "Scan customer loyalty cards to add stamps and redeem rewards.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
