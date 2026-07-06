@@ -19,7 +19,11 @@
     },
     "android": {
       "package": "co.loyallocal.staff",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       [
@@ -28,6 +32,12 @@
           "cameraPermission": "Allow LoyalLocal Staff to scan customer loyalty cards."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5b57d099-6912-4e59-a898-587b1473983e"
+      }
+    },
+    "owner": "cenkkara"
   }
 }
