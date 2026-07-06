@@ -178,13 +178,28 @@ body {
   animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes card-swap {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card-swap {
+  animation: card-swap 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-float,
   .hero-badge-float,
   .hero-sheen,
   .stamp-pop,
   .card-float,
-  .reveal-up {
+  .reveal-up,
+  .card-swap {
     animation: none;
   }
 }
