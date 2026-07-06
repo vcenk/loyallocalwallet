@@ -11,10 +11,13 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardPreview,
 } from "@llw/ui";
 import { EDITABLE_PROGRAM_STATUSES } from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
+import {
+  WalletCardPreview,
+  STAMP_ICON_KEYS,
+} from "@/components/wallet-card-preview";
 import { updateProgram, updateDesign } from "../actions";
 
 const SELECT_CLASS =
@@ -53,6 +56,7 @@ export default async function EditProgramPage({
 
   const bg = design?.background_color ?? "#ae3115";
   const fg = design?.foreground_color ?? "#ffffff";
+  const stampIcon = design?.stamp_icon ?? "star";
   const stampsRequired = program.stamps_required ?? 10;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -203,6 +207,21 @@ export default async function EditProgramPage({
                     />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="stampIcon">Stamp icon</Label>
+                  <select
+                    id="stampIcon"
+                    name="stampIcon"
+                    defaultValue={stampIcon}
+                    className={SELECT_CLASS}
+                  >
+                    {STAMP_ICON_KEYS.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <Button type="submit" variant="outline">
                   Save design
                 </Button>
@@ -216,7 +235,7 @@ export default async function EditProgramPage({
             <p className="mb-2 text-sm font-medium text-muted-foreground">
               Preview
             </p>
-            <CardPreview
+            <WalletCardPreview
               businessName={business?.name ?? ""}
               programName={program.name}
               rewardTitle={program.reward_title}
@@ -224,6 +243,7 @@ export default async function EditProgramPage({
               currentStamps={Math.ceil(stampsRequired / 2)}
               backgroundColor={bg}
               foregroundColor={fg}
+              stampIcon={stampIcon}
             />
           </div>
 

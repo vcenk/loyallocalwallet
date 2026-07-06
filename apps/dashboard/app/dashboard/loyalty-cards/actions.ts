@@ -67,10 +67,18 @@ export async function createProgram(formData: FormData) {
     );
   }
 
-  // Create the default card design (one per program).
-  await supabase
-    .from("card_designs")
-    .insert({ business_id: m.businessId, program_id: program.id });
+  // Save the chosen design (from template / pickers), with safe defaults.
+  const hex = /^#[0-9a-fA-F]{6}$/;
+  const bg = String(formData.get("backgroundColor") ?? "");
+  const fg = String(formData.get("foregroundColor") ?? "");
+  const icon = String(formData.get("stampIcon") ?? "").slice(0, 24);
+  await supabase.from("card_designs").insert({
+    business_id: m.businessId,
+    program_id: program.id,
+    background_color: hex.test(bg) ? bg : "#ae3115",
+    foreground_color: hex.test(fg) ? fg : "#ffffff",
+    stamp_icon: icon || "star",
+  });
 
   redirect(`/dashboard/loyalty-cards/${program.id}?created=1`);
 }
@@ -121,6 +129,7 @@ export async function updateDesign(formData: FormData) {
   const parsed = designSchema.safeParse({
     backgroundColor: formData.get("backgroundColor"),
     foregroundColor: formData.get("foregroundColor"),
+    stampIcon: formData.get("stampIcon") || undefined,
   });
 
   if (!parsed.success) {
@@ -138,6 +147,7 @@ export async function updateDesign(formData: FormData) {
     .update({
       background_color: parsed.data.backgroundColor,
       foreground_color: parsed.data.foregroundColor,
+      stamp_icon: parsed.data.stampIcon ?? "star",
     })
     .eq("program_id", programId)
     .eq("business_id", m.businessId);

@@ -37,6 +37,7 @@ const hexColor = z
 export const designSchema = z.object({
   backgroundColor: hexColor,
   foregroundColor: hexColor,
+  stampIcon: z.string().trim().max(24).optional(),
 });
 
 export const enrollSchema = z.object({
