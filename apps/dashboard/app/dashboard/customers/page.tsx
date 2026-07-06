@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Search } from "lucide-react";
+import { Users, Search, Stamp } from "lucide-react";
 import {
   PageHeader,
   EmptyState,
@@ -21,6 +21,29 @@ const dateFmt = new Intl.DateTimeFormat("en-US", {
 
 function formatDate(iso: string | null) {
   return iso ? dateFmt.format(new Date(iso)) : "—";
+}
+
+const AVATAR_COLORS = [
+  "#ae3115",
+  "#c0421e",
+  "#b45309",
+  "#0f766e",
+  "#be185d",
+  "#7c2d12",
+  "#3f6212",
+  "#0e7490",
+];
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  const str = `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+  return str || "G";
+}
+
+function avatarColor(seed: string) {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
 type WalletState = "saved" | "pending" | "removed" | "none";
@@ -130,7 +153,7 @@ export default async function CustomersPage({
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Customer</th>
                   <th className="px-5 py-3 font-semibold">Stamps</th>
@@ -165,19 +188,34 @@ export default async function CustomersPage({
                   const contact = c.email ?? c.phone ?? "—";
 
                   return (
-                    <tr key={c.id} className="hover:bg-muted/50">
+                    <tr key={c.id} className="group transition-colors hover:bg-muted/50">
                       <td className="px-5 py-3">
                         <Link
                           href={`/dashboard/customers/${c.id}`}
-                          className="font-medium text-foreground hover:text-primary hover:underline"
+                          className="flex items-center gap-3"
                         >
-                          {name}
+                          <span
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                            style={{ backgroundColor: avatarColor(name) }}
+                          >
+                            {initials(name)}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-foreground group-hover:text-primary">
+                              {name}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {contact}
+                            </span>
+                          </span>
                         </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {contact}
-                        </p>
                       </td>
-                      <td className="px-5 py-3 text-foreground">{stamps}</td>
+                      <td className="px-5 py-3">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                          <Stamp className="h-4 w-4 text-muted-foreground" />
+                          {stamps}
+                        </span>
+                      </td>
                       <td className="px-5 py-3">
                         {rewards > 0 ? (
                           <Badge variant="success">Reward ready</Badge>
