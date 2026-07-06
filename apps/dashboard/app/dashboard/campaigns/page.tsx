@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { Megaphone, Users } from "lucide-react";
 import {
   PageHeader,
   Button,
@@ -67,7 +67,7 @@ export default async function CampaignsPage() {
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-5 py-3 font-semibold">Campaign</th>
                   <th className="px-5 py-3 font-semibold">Audience</th>
@@ -80,14 +80,31 @@ export default async function CampaignsPage() {
                 {rows.map((c) => {
                   const count = c.campaign_recipients?.[0]?.count ?? 0;
                   return (
-                    <tr key={c.id} className="hover:bg-muted/50">
-                      <td className="px-5 py-3 font-medium text-foreground">
-                        {c.name}
+                    <tr key={c.id} className="transition-colors hover:bg-muted/50">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Megaphone className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-foreground">
+                              {c.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Wallet card update
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3 text-muted-foreground">
                         {audienceLabel(c.audience_key)}
                       </td>
-                      <td className="px-5 py-3 text-foreground">{count}</td>
+                      <td className="px-5 py-3">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          {count}
+                        </span>
+                      </td>
                       <td className="px-5 py-3">
                         <Badge variant={STATUS_VARIANT[c.status]}>
                           {c.status}
