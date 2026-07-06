@@ -18,6 +18,7 @@ export interface CustomerActivity {
   closeToReward: boolean;
   lost: boolean;
   primaryPassId: string | null;
+  marketingConsent: boolean;
 }
 
 // Loads every customer with derived retention fields. Excludes nothing here;
@@ -37,7 +38,7 @@ export async function getCustomerActivity(
   const { data: customers } = await supabase
     .from("customers")
     .select(
-      "id, first_name, last_name, email, phone, first_seen_at, last_seen_at, wallet_passes(id, current_stamps, rewards_available, status, program_id)",
+      "id, first_name, last_name, email, phone, marketing_consent, first_seen_at, last_seen_at, wallet_passes(id, current_stamps, rewards_available, status, program_id)",
     )
     .eq("business_id", businessId)
     .limit(2000);
@@ -80,6 +81,7 @@ export async function getCustomerActivity(
       closeToReward,
       lost,
       primaryPassId: primary?.id ?? null,
+      marketingConsent: c.marketing_consent ?? false,
     };
   });
 }
