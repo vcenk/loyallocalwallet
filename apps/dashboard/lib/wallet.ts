@@ -35,7 +35,7 @@ async function buildFromPass(
     await Promise.all([
       admin
         .from("loyalty_programs")
-        .select("name, reward_title, stamps_required")
+        .select("name, reward_title, stamps_required, program_type")
         .eq("id", pass.program_id)
         .maybeSingle(),
       admin
@@ -50,7 +50,7 @@ async function buildFromPass(
         .maybeSingle(),
       admin
         .from("card_designs")
-        .select("background_color, foreground_color")
+        .select("background_color, foreground_color, stamp_icon, pattern, stamp_style")
         .eq("program_id", pass.program_id)
         .maybeSingle(),
     ]);
@@ -70,6 +70,10 @@ async function buildFromPass(
     backgroundColor: design?.background_color ?? "#ae3115",
     foregroundColor: design?.foreground_color ?? "#ffffff",
     logoUrl: business?.logo_url ?? null,
+    stampIcon: design?.stamp_icon ?? "star",
+    pattern: design?.pattern ?? "none",
+    stampStyle: design?.stamp_style ?? "circles",
+    programType: program.program_type,
     message: pass.message_body,
     messageLink: pass.message_link,
   };
