@@ -150,11 +150,41 @@ body {
   animation: hero-sheen 5.5s ease-in-out infinite;
 }
 
+/* Isometric feature card stack */
+@keyframes card-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+.card-float {
+  animation: card-float 5s ease-in-out infinite;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.reveal-up {
+  animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-float,
   .hero-badge-float,
   .hero-sheen,
-  .stamp-pop {
+  .stamp-pop,
+  .card-float,
+  .reveal-up {
     animation: none;
   }
 }

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { HeroCard } from "@/components/hero-card";
+import { CardStack } from "@/components/card-stack";
 
 const NICHES = [
   "Cafés",
@@ -273,6 +274,52 @@ export default async function LandingPage() {
               <p className="mt-2 text-muted-foreground">{s.d}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Card showcase — isometric stack + feature checklist */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div className="order-2 md:order-1">
+            <CardStack />
+          </div>
+          <div className="order-1 md:order-2">
+            <span className="inline-block border-b-2 border-accent pb-1 text-sm font-bold uppercase tracking-widest text-primary">
+              The wallet card
+            </span>
+            <h2 className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight md:text-5xl">
+              One card, in the wallet they already carry.
+            </h2>
+            <p className="mt-5 max-w-md text-lg text-muted-foreground">
+              Your logo, your colors — a real Apple &amp; Google Wallet pass that
+              updates itself after every visit. No plastic, no paper, nothing to
+              download.
+            </p>
+            <ul className="mt-8 space-y-4">
+              {[
+                "Real Apple & Google Wallet passes",
+                "Updates instantly after every stamp",
+                "Your logo, colors & reward",
+                "No app for your customers",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-[#261815]">
+                    <Check className="h-4 w-4" strokeWidth={3} />
+                  </span>
+                  <span className="text-base font-medium text-foreground">
+                    {f}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/login"
+              className="mt-9 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:brightness-110 active:scale-95"
+            >
+              Start free trial
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
