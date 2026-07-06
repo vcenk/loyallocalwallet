@@ -12,11 +12,13 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "co.loyallocal.staff",
       "infoPlist": {
         "NSCameraUsageDescription": "Scan customer loyalty cards to add stamps and redeem rewards."
       }
     },
     "android": {
+      "package": "co.loyallocal.staff",
       "permissions": ["CAMERA"]
     },
     "plugins": [
