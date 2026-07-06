@@ -12,5 +12,8 @@ export const supabase = createClient(url, anonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE so the native Google OAuth flow can exchange the returned code for
+    // a session (the code verifier is kept in AsyncStorage between steps).
+    flowType: "pkce",
   },
 });

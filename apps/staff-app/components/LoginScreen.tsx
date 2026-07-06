@@ -9,8 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { supabase } from "../lib/supabase";
 import { colors } from "../lib/theme";
+
+// The app's custom scheme (see app.json "scheme"). Supabase redirects back
+// here after Google auth; this must be in Supabase's allowed Redirect URLs.
+const REDIRECT_TO = "loyallocal-staff://auth-callback";
 
 export function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -26,6 +31,39 @@ export function LoginScreen() {
     setBusy(false);
   }
 
+  async function signInWithGoogle() {
+    setBusy(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: REDIRECT_TO, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data?.url) throw new Error("Could not start Google sign-in.");
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_TO);
+      if (result.type !== "success" || !result.url) {
+        // User dismissed/cancelled the browser — not an error.
+        setBusy(false);
+        return;
+      }
+
+      const code = result.url.match(/[?&]code=([^&]+)/)?.[1];
+      if (!code) throw new Error("No sign-in code returned from Google.");
+
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
+        decodeURIComponent(code),
+      );
+      if (exchangeError) throw exchangeError;
+      // On success, App.tsx's onAuthStateChange swaps to the scanner.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Google sign-in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -35,6 +73,21 @@ export function LoginScreen() {
       <Text style={styles.subtitle}>Staff scanner</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <TouchableOpacity
+        style={[styles.googleButton, busy && styles.buttonDisabled]}
+        onPress={signInWithGoogle}
+        disabled={busy}
+      >
+        <Text style={styles.googleG}>G</Text>
+        <Text style={styles.googleText}>Continue with Google</Text>
+      </TouchableOpacity>
+
+      <View style={styles.dividerRow}>
+        <View style={styles.divider} />
+        <Text style={styles.dividerText}>or</Text>
+        <View style={styles.divider} />
+      </View>
 
       <TextInput
         style={styles.input}
@@ -98,6 +151,22 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: colors.primaryText, fontSize: 16, fontWeight: "700" },
+  googleButton: {
+    height: 52,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  googleG: { color: "#4285F4", fontSize: 18, fontWeight: "800" },
+  googleText: { color: colors.ink, fontSize: 16, fontWeight: "700" },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
+  divider: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.muted, fontSize: 13, fontWeight: "600" },
   error: {
     backgroundColor: "#fdecea",
     color: colors.danger,
