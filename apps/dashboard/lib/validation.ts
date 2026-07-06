@@ -52,6 +52,31 @@ export const businessProfileSchema = z.object({
   brandColor: hexColor.optional(),
 });
 
+// Roles an owner/admin can assign to staff (never owner or platform_admin).
+export const ASSIGNABLE_ROLES = ["business_admin", "manager", "staff"] as const;
+
+export const locationSchema = z.object({
+  name: z.string().trim().min(2, "Location name is required.").max(120),
+  addressLine1: z.string().trim().max(160).optional(),
+  city: z.string().trim().max(80).optional(),
+  province: z.string().trim().max(80).optional(),
+  postalCode: z.string().trim().max(20).optional(),
+  phone: z.string().trim().max(30).optional(),
+});
+
+export const inviteStaffSchema = z.object({
+  email: z.string().trim().email("Enter a valid email."),
+  role: z.enum(ASSIGNABLE_ROLES),
+  locationId: z
+    .union([z.string().uuid(), z.literal("")])
+    .optional(),
+});
+
+export const staffRoleSchema = z.object({
+  staffMemberId: z.string().uuid(),
+  role: z.enum(ASSIGNABLE_ROLES),
+});
+
 export const enrollSchema = z.object({
   firstName: z.string().trim().min(1, "Please enter your name.").max(80),
   email: z

@@ -24,3 +24,21 @@ export async function countPrograms(supabase: DbClient, businessId: string) {
     .eq("business_id", businessId);
   return count ?? 0;
 }
+
+export async function countLocations(supabase: DbClient, businessId: string) {
+  const { count } = await supabase
+    .from("locations")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", businessId)
+    .eq("is_active", true);
+  return count ?? 0;
+}
+
+export async function countStaff(supabase: DbClient, businessId: string) {
+  const { count } = await supabase
+    .from("staff_members")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", businessId)
+    .eq("is_active", true);
+  return count ?? 0;
+}
