@@ -13,10 +13,10 @@ export default async function JoinPage({
   searchParams,
 }: {
   params: Promise<{ programId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; ref?: string }>;
 }) {
   const { programId } = await params;
-  const { error } = await searchParams;
+  const { error, ref } = await searchParams;
 
   const supabase = createAdminClient();
   const { data: program } = await supabase
@@ -90,8 +90,15 @@ export default async function JoinPage({
         </p>
       ) : null}
 
+      {ref ? (
+        <p className="rounded-xl bg-green-50 px-4 py-3 text-center text-sm text-green-700">
+          A friend invited you — you&apos;ll both get a bonus stamp 🎉
+        </p>
+      ) : null}
+
       <form action={enroll} className="space-y-4">
         <input type="hidden" name="programId" value={program.id} />
+        {ref ? <input type="hidden" name="ref" value={ref} /> : null}
 
         <input
           name="firstName"

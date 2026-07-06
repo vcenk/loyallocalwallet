@@ -185,6 +185,40 @@ export async function addStamp(
   return progress;
 }
 
+// System-granted bonus stamp (e.g. a referral reward) — no staff actor.
+export async function giveSystemBonus(
+  admin: DbClient,
+  pass: PassInfo,
+  program: ProgramInfo,
+  reason: string,
+): Promise<Progress> {
+  await admin.from("stamp_events").insert({
+    business_id: pass.business_id,
+    customer_id: pass.customer_id,
+    program_id: pass.program_id,
+    wallet_pass_id: pass.id,
+    staff_member_id: null,
+    event_type: "bonus",
+    quantity: 1,
+    reason: reason.slice(0, 120),
+  });
+
+  const progress = await computeProgress(admin, pass.id, program);
+  await syncCache(admin, pass.id, progress);
+  await touchCustomer(admin, pass.customer_id);
+  await admin.from("audit_logs").insert({
+    business_id: pass.business_id,
+    actor_user_id: null,
+    actor_staff_member_id: null,
+    action: "referral_bonus",
+    entity_type: "wallet_pass",
+    entity_id: pass.id,
+    metadata: { reason },
+  });
+  await syncWalletForPass(admin, pass.id);
+  return progress;
+}
+
 export async function redeem(
   admin: DbClient,
   ctx: StaffContext,

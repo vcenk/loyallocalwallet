@@ -6,6 +6,7 @@ import {
   googleSaveUrlForSerial,
   isAppleWalletConfigured,
 } from "@/lib/wallet";
+import { ReferralShare } from "@/components/referral-share";
 
 export default async function JoinSuccessPage({
   params,
@@ -34,7 +35,7 @@ export default async function JoinSuccessPage({
       .maybeSingle(),
     supabase
       .from("customers")
-      .select("first_name, business_id")
+      .select("first_name, business_id, referral_code")
       .eq("id", pass.customer_id)
       .maybeSingle(),
   ]);
@@ -55,6 +56,11 @@ export default async function JoinSuccessPage({
 
   const businessName = business?.name ?? "the shop";
   const stampsRequired = program.stamps_required ?? 10;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const referralUrl = customer.referral_code
+    ? `${appUrl}/join/${programId}?ref=${customer.referral_code}`
+    : null;
 
   const googleSaveUrl = await googleSaveUrlForSerial(supabase, serial);
   const appleAvailable = isAppleWalletConfigured();
@@ -113,6 +119,16 @@ export default async function JoinSuccessPage({
           collect stamps.
         </div>
       )}
+
+      {referralUrl ? (
+        <div className="rounded-2xl border border-border bg-card p-5 text-left">
+          <p className="font-semibold text-foreground">Refer a friend 🎁</p>
+          <p className="mt-1 mb-3 text-sm text-muted-foreground">
+            Share your link — when a friend joins, you both get a bonus stamp.
+          </p>
+          <ReferralShare url={referralUrl} businessName={businessName} />
+        </div>
+      ) : null}
     </main>
   );
 }

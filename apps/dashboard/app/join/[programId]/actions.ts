@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enrollSchema } from "@/lib/validation";
-import { generateSerial } from "@/lib/token";
+import { generateSerial, generateReferralCode } from "@/lib/token";
 import { rateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
 import { fireWelcome } from "@/lib/automations";
+import { processReferral } from "@/lib/referrals";
 
 export async function enroll(formData: FormData) {
   const programId = String(formData.get("programId") ?? "");
@@ -56,6 +57,7 @@ export async function enroll(formData: FormData) {
       marketing_consent: consent,
       birth_month: parsed.data.birthMonth ?? null,
       birth_day: parsed.data.birthDay ?? null,
+      referral_code: generateReferralCode(),
     })
     .select("id")
     .single();
@@ -87,6 +89,18 @@ export async function enroll(formData: FormData) {
 
   // Instant welcome (stored on the pass; shows when they add it to a wallet).
   await fireWelcome(supabase, program.business_id, customer.id, pass.id);
+
+  // Refer-a-friend: if they came via a ?ref= link, credit both sides.
+  const referrerCode = String(formData.get("ref") ?? "").trim();
+  if (referrerCode) {
+    await processReferral(supabase, {
+      businessId: program.business_id,
+      programId: program.id,
+      referrerCode,
+      referredCustomerId: customer.id,
+      referredPassId: pass.id,
+    });
+  }
 
   redirect(`/join/${programId}/success?p=${serial}`);
 }

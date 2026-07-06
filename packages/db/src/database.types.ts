@@ -81,6 +81,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      referrals: {
+        Row: {
+          id: string;
+          business_id: string;
+          program_id: string | null;
+          referrer_customer_id: string;
+          referred_customer_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          program_id?: string | null;
+          referrer_customer_id: string;
+          referred_customer_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          business_id?: string;
+          program_id?: string | null;
+          referrer_customer_id?: string;
+          referred_customer_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -427,6 +454,7 @@ export type Database = {
           language: string | null;
           birth_month: number | null;
           birth_day: number | null;
+          referral_code: string | null;
           first_seen_at: string;
           last_seen_at: string | null;
           created_at: string;
@@ -443,6 +471,7 @@ export type Database = {
           language?: string | null;
           birth_month?: number | null;
           birth_day?: number | null;
+          referral_code?: string | null;
           first_seen_at?: string;
           last_seen_at?: string | null;
           created_at?: string;
@@ -459,6 +488,7 @@ export type Database = {
           language?: string | null;
           birth_month?: number | null;
           birth_day?: number | null;
+          referral_code?: string | null;
           first_seen_at?: string;
           last_seen_at?: string | null;
           created_at?: string;
