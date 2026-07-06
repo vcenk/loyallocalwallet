@@ -2,16 +2,25 @@ import { appleConfig, loadCert } from "./env";
 import type { WalletCardData } from "./types";
 import { renderStripImages } from "./strip";
 
-// Fetches the shop logo and adds it as the pass logo + icon (overrides the model
-// placeholder). Best-effort — never throws.
-async function embedLogo(
-  pass: { addBuffer: (name: string, buf: Buffer) => void },
-  url: string,
-): Promise<void> {
+// Fetches the shop logo once (used for the native logo slot + the strip badge).
+async function fetchLogo(url: string | null | undefined): Promise<Buffer | null> {
+  if (!url) return null;
   try {
     const res = await fetch(url);
-    if (!res.ok) return;
-    const src = Buffer.from(await res.arrayBuffer());
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch (err) {
+    console.error("logo fetch failed", err);
+    return null;
+  }
+}
+
+// Adds the shop logo as the pass logo + icon (overrides the model placeholder).
+async function embedLogo(
+  pass: { addBuffer: (name: string, buf: Buffer) => void },
+  src: Buffer,
+): Promise<void> {
+  try {
     const sharp = (await import("sharp")).default;
     const logo = (h: number) =>
       sharp(src).resize({ height: h, fit: "inside" }).png().toBuffer();
@@ -84,8 +93,9 @@ export async function generateApplePkpass(
   // break pass generation, so the text fallback below still shows progress.
   let stripAdded = false;
   try {
-    if (data.logoUrl) await embedLogo(pass, data.logoUrl);
-    const strips = await renderStripImages(data);
+    const logoBuf = await fetchLogo(data.logoUrl);
+    if (logoBuf) await embedLogo(pass, logoBuf);
+    const strips = await renderStripImages(data, logoBuf);
     if (strips) {
       for (const [name, buf] of Object.entries(strips)) pass.addBuffer(name, buf);
       stripAdded = true;

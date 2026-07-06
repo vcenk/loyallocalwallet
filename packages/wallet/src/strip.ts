@@ -31,31 +31,31 @@ function iconGroup(
   const scale = size / 24;
   const tx = cx - size / 2;
   const ty = cy - size / 2;
-  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${scale.toFixed(4)})" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${opacity}">${path}</g>`;
+  // Bolder stroke so the icon reads clearly at small sizes.
+  return `<g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${scale.toFixed(4)})" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${opacity}">${path}</g>`;
 }
 
-// The owner's background pattern, as a faint SVG watermark (like the branded
-// watermarks on real loyalty passes).
 function patternDef(key: string, fg: string, s: number): string {
   switch (key) {
     case "dots":
-      return `<pattern id="pat" width="${16 * s}" height="${16 * s}" patternUnits="userSpaceOnUse"><circle cx="${8 * s}" cy="${8 * s}" r="${1.6 * s}" fill="${fg}"/></pattern>`;
+      return `<pattern id="pat" width="${16 * s}" height="${16 * s}" patternUnits="userSpaceOnUse"><circle cx="${8 * s}" cy="${8 * s}" r="${1.8 * s}" fill="${fg}"/></pattern>`;
     case "grid":
-      return `<pattern id="pat" width="${22 * s}" height="${22 * s}" patternUnits="userSpaceOnUse"><path d="M ${22 * s} 0 L 0 0 0 ${22 * s}" fill="none" stroke="${fg}" stroke-width="${s}"/></pattern>`;
+      return `<pattern id="pat" width="${22 * s}" height="${22 * s}" patternUnits="userSpaceOnUse"><path d="M ${22 * s} 0 L 0 0 0 ${22 * s}" fill="none" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
     case "diagonal":
-      return `<pattern id="pat" width="${12 * s}" height="${12 * s}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${12 * s}" stroke="${fg}" stroke-width="${s}"/></pattern>`;
+      return `<pattern id="pat" width="${12 * s}" height="${12 * s}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${12 * s}" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
     case "crosshatch":
-      return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><path d="M0 0 L${10 * s} ${10 * s} M${10 * s} 0 L0 ${10 * s}" stroke="${fg}" stroke-width="${s}"/></pattern>`;
+      return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><path d="M0 0 L${10 * s} ${10 * s} M${10 * s} 0 L0 ${10 * s}" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
     case "vertical":
-      return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="${10 * s}" stroke="${fg}" stroke-width="${s}"/></pattern>`;
+      return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="${10 * s}" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
     default:
       return "";
   }
 }
 
-// Builds the Apple pass "strip" banner as an SVG reflecting the owner's design:
-// brand colors, their pattern watermark, and their stamp icon + style.
-function stripSvg(data: WalletCardData, scale: number): string {
+// The Apple pass "strip" banner reflecting the owner's design: brand colors,
+// their pattern watermark, and their stamp icon + style. `hasLogo` reserves
+// room on the left for a logo badge composited in renderStripImages.
+function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string {
   const W = 375 * scale;
   const H = 123 * scale;
   const bg = data.backgroundColor || "#ae3115";
@@ -69,53 +69,92 @@ function stripSvg(data: WalletCardData, scale: number): string {
   const pdef = patternKey !== "none" ? patternDef(patternKey, fg, scale) : "";
   const defs = pdef ? `<defs>${pdef}</defs>` : "";
   const patternRect = pdef
-    ? `<rect width="${W}" height="${H}" fill="url(#pat)" opacity="0.14"/>`
+    ? `<rect width="${W}" height="${H}" fill="url(#pat)" opacity="0.18"/>`
     : "";
+
+  const left = hasLogo ? 108 * scale : 24 * scale;
+  const right = 24 * scale;
+  const areaX = left;
+  const areaW = W - left - right;
 
   let marks = "";
   const useBar = style === "progress" || total > 12;
   if (useBar) {
-    const padX = 30 * scale;
-    const barH = 16 * scale;
+    const barH = 18 * scale;
     const y = (H - barH) / 2;
-    const w = W - padX * 2;
     const frac = Math.min(1, filled / total);
     marks =
-      `<rect x="${padX}" y="${y}" width="${w}" height="${barH}" rx="${barH / 2}" fill="${fg}" fill-opacity="0.22"/>` +
-      `<rect x="${padX}" y="${y}" width="${(w * frac).toFixed(1)}" height="${barH}" rx="${barH / 2}" fill="${fg}"/>`;
+      `<rect x="${areaX}" y="${y}" width="${areaW}" height="${barH}" rx="${barH / 2}" fill="${fg}" fill-opacity="0.22"/>` +
+      `<rect x="${areaX}" y="${y}" width="${(areaW * frac).toFixed(1)}" height="${barH}" rx="${barH / 2}" fill="${fg}"/>`;
   } else {
+    const rows = total > 6 ? 2 : 1;
+    const cols = Math.ceil(total / rows);
+    const areaTop = 16 * scale;
+    const areaH = H - 32 * scale;
+    const cellW = areaW / cols;
+    const cellH = areaH / rows;
+    const r = Math.min(cellW, cellH) * 0.34;
     const pill = style === "pills";
-    const padX = 26 * scale;
-    const usable = W - padX * 2;
-    const step = usable / total;
-    const cy = H * 0.5;
-    const r = Math.min(step * 0.3, 16 * scale);
+    const sw = (2.4 * scale).toFixed(1);
     for (let i = 0; i < total; i++) {
-      const cx = padX + step * (i + 0.5);
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const cx = areaX + cellW * (col + 0.5);
+      const cy = areaTop + cellH * (row + 0.5);
       const on = i < filled;
-      const sw = (2 * scale).toFixed(1);
       if (pill) {
-        const pw = Math.min(step * 0.82, r * 2.6);
+        const pw = Math.min(cellW * 0.82, r * 2.6);
         const ph = r * 2;
-        marks += `<rect x="${(cx - pw / 2).toFixed(1)}" y="${(cy - ph / 2).toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="${(ph / 2).toFixed(1)}" fill="${on ? fg : "none"}" stroke="${fg}" stroke-width="${sw}" stroke-opacity="${on ? 1 : 0.5}"/>`;
+        marks += `<rect x="${(cx - pw / 2).toFixed(1)}" y="${(cy - ph / 2).toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="${(ph / 2).toFixed(1)}" fill="${on ? fg : "none"}" stroke="${fg}" stroke-width="${sw}" stroke-opacity="${on ? 1 : 0.55}"/>`;
       } else {
-        marks += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${on ? fg : "none"}" stroke="${fg}" stroke-width="${sw}" stroke-opacity="${on ? 1 : 0.5}"/>`;
+        marks += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${on ? fg : "none"}" stroke="${fg}" stroke-width="${sw}" stroke-opacity="${on ? 1 : 0.55}"/>`;
       }
-      marks += iconGroup(icon, cx, cy, r * 1.25, on ? bg : fg, on ? 1 : 0.55);
+      marks += iconGroup(icon, cx, cy, r * 1.45, on ? bg : fg, on ? 1 : 0.7);
     }
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${defs}<rect width="${W}" height="${H}" fill="${bg}"/>${patternRect}${marks}</svg>`;
 }
 
-// Renders strip.png at 1x/2x/3x. Returns null on failure (caller falls back).
+// Renders strip.png at 1x/2x/3x, compositing the shop logo (circular badge) on
+// the left when available. Returns null on failure (caller falls back).
 export async function renderStripImages(
   data: WalletCardData,
+  logoBuf: Buffer | null,
 ): Promise<Record<string, Buffer> | null> {
   try {
     const sharp = (await import("sharp")).default;
-    const make = (s: number) =>
-      sharp(Buffer.from(stripSvg(data, s))).png().toBuffer();
+    const make = async (s: number) => {
+      let base = await sharp(Buffer.from(stripSvg(data, s, !!logoBuf)))
+        .png()
+        .toBuffer();
+      if (logoBuf) {
+        try {
+          const d = Math.round(80 * s);
+          const mask = Buffer.from(
+            `<svg width="${d}" height="${d}"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2}" fill="#fff"/></svg>`,
+          );
+          const logoImg = await sharp(logoBuf)
+            .resize(d, d, { fit: "cover" })
+            .composite([{ input: mask, blend: "dest-in" }])
+            .png()
+            .toBuffer();
+          base = await sharp(base)
+            .composite([
+              {
+                input: logoImg,
+                top: Math.round((123 * s - d) / 2),
+                left: Math.round(16 * s),
+              },
+            ])
+            .png()
+            .toBuffer();
+        } catch (err) {
+          console.error("logo composite failed", err);
+        }
+      }
+      return base;
+    };
     return {
       "strip.png": await make(1),
       "strip@2x.png": await make(2),
