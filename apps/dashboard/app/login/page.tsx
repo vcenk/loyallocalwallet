@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button, Input, Label, Card, CardContent } from "@llw/ui";
 import { createClient } from "@/lib/supabase/server";
+import { GoogleButton } from "@/components/google-button";
 import { signIn, signUp } from "./actions";
 
 export default async function LoginPage({
@@ -41,6 +42,13 @@ export default async function LoginPage({
                 {message}
               </p>
             ) : null}
+
+            <GoogleButton />
+            <div className="my-5 flex items-center gap-3 text-xs font-medium text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              or
+              <div className="h-px flex-1 bg-border" />
+            </div>
 
             <form className="space-y-4">
               <div className="space-y-1.5">
