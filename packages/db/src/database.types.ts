@@ -21,6 +21,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      automations: {
+        Row: {
+          id: string;
+          business_id: string;
+          key: string;
+          enabled: boolean;
+          title: string;
+          body: string;
+          threshold_days: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          key: string;
+          enabled?: boolean;
+          title?: string;
+          body?: string;
+          threshold_days?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          business_id?: string;
+          key?: string;
+          enabled?: boolean;
+          title?: string;
+          body?: string;
+          threshold_days?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      automation_sends: {
+        Row: {
+          id: string;
+          business_id: string;
+          customer_id: string;
+          automation_key: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          customer_id: string;
+          automation_key: string;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          business_id?: string;
+          customer_id?: string;
+          automation_key?: string;
+          sent_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

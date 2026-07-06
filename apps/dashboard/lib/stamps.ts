@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@llw/db";
 import { calculateProgress, type ProgramType, type Progress } from "@llw/config";
 import { syncWalletForPass, notifyPass } from "./wallet";
+import { fireAlmostThere } from "./automations";
 
 // Shared stamp-engine core, used by both the dashboard server actions and the
 // staff HTTP API. All mutations expect an admin (service-role) client; callers
@@ -172,6 +173,15 @@ export async function addStamp(
     { quantity: 1, reason, total: progress.total },
   );
   await syncWalletForPass(admin, pass.id);
+
+  // Instant "almost there" nudge when this stamp leaves them one short.
+  if (
+    progress.rewardsAvailable === 0 &&
+    progress.required - progress.towardNext === 1
+  ) {
+    await fireAlmostThere(admin, pass.business_id, pass.customer_id, pass.id);
+  }
+
   return progress;
 }
 

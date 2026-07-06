@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { enrollSchema } from "@/lib/validation";
 import { generateSerial } from "@/lib/token";
 import { rateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
+import { fireWelcome } from "@/lib/automations";
 
 export async function enroll(formData: FormData) {
   const programId = String(formData.get("programId") ?? "");
@@ -61,20 +62,27 @@ export async function enroll(formData: FormData) {
   }
 
   const serial = generateSerial();
-  const { error: passError } = await supabase.from("wallet_passes").insert({
-    business_id: program.business_id,
-    customer_id: customer.id,
-    program_id: program.id,
-    platform: parsed.data.platform,
-    serial_number: serial,
-    authentication_token: generateSerial(),
-    status: "created",
-  });
-  if (passError) {
+  const { data: pass, error: passError } = await supabase
+    .from("wallet_passes")
+    .insert({
+      business_id: program.business_id,
+      customer_id: customer.id,
+      program_id: program.id,
+      platform: parsed.data.platform,
+      serial_number: serial,
+      authentication_token: generateSerial(),
+      status: "created",
+    })
+    .select("id")
+    .single();
+  if (passError || !pass) {
     redirect(
-      `/join/${programId}?error=${encodeURIComponent(passError.message)}`,
+      `/join/${programId}?error=${encodeURIComponent(passError?.message ?? "Could not create pass.")}`,
     );
   }
+
+  // Instant welcome (stored on the pass; shows when they add it to a wallet).
+  await fireWelcome(supabase, program.business_id, customer.id, pass.id);
 
   redirect(`/join/${programId}/success?p=${serial}`);
 }
