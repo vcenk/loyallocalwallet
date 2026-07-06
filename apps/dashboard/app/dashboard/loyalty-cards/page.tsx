@@ -5,11 +5,10 @@ import {
   Button,
   Badge,
   EmptyState,
-  Card,
-  CardContent,
   type BadgeProps,
 } from "@llw/ui";
 import { createClient } from "@/lib/supabase/server";
+import { WalletCardPreview } from "@/components/wallet-card-preview";
 
 const STATUS_VARIANT: Record<string, BadgeProps["variant"]> = {
   active: "success",
@@ -20,11 +19,22 @@ const STATUS_VARIANT: Record<string, BadgeProps["variant"]> = {
 
 export default async function LoyaltyCardsPage() {
   const supabase = await createClient();
-  const { data: programs } = await supabase
-    .from("loyalty_programs")
-    .select("id, name, status, stamps_required, reward_title")
-    .order("created_at", { ascending: false });
 
+  const [{ data: programs }, { data: designs }, { data: business }] =
+    await Promise.all([
+      supabase
+        .from("loyalty_programs")
+        .select("id, name, status, stamps_required, reward_title")
+        .order("created_at", { ascending: false }),
+      supabase.from("card_designs").select("*"),
+      supabase.from("businesses").select("name, logo_url").limit(1).maybeSingle(),
+    ]);
+
+  const designByProgram = new Map(
+    (designs ?? []).map((d) => [d.program_id, d]),
+  );
+
+  const rows = programs ?? [];
   const newButton = (
     <Button asChild>
       <Link href="/dashboard/loyalty-cards/new">New card</Link>
@@ -39,7 +49,7 @@ export default async function LoyaltyCardsPage() {
         action={newButton}
       />
 
-      {!programs || programs.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           icon={<CreditCard className="h-5 w-5" />}
           title="No loyalty cards yet"
@@ -53,22 +63,40 @@ export default async function LoyaltyCardsPage() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {programs.map((p) => (
-            <Link key={p.id} href={`/dashboard/loyalty-cards/${p.id}`}>
-              <Card className="h-full transition-colors hover:border-primary">
-                <CardContent className="p-5 pt-5">
-                  <div className="flex items-center justify-between gap-3">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((p) => {
+            const d = designByProgram.get(p.id);
+            const required = p.stamps_required ?? 10;
+            return (
+              <Link
+                key={p.id}
+                href={`/dashboard/loyalty-cards/${p.id}`}
+                className="group block rounded-3xl border border-border bg-card p-4 transition-all hover:border-primary hover:shadow-lg"
+              >
+                <WalletCardPreview
+                  businessName={business?.name ?? ""}
+                  programName={p.name}
+                  rewardTitle={p.reward_title}
+                  stampsRequired={required}
+                  currentStamps={Math.ceil(required * 0.6)}
+                  backgroundColor={d?.background_color ?? "#ae3115"}
+                  foregroundColor={d?.foreground_color ?? "#ffffff"}
+                  stampIcon={d?.stamp_icon ?? "star"}
+                  pattern={d?.pattern ?? "none"}
+                  logoUrl={business?.logo_url}
+                />
+                <div className="mt-4 flex items-center justify-between px-1">
+                  <div>
                     <p className="font-semibold text-foreground">{p.name}</p>
-                    <Badge variant={STATUS_VARIANT[p.status]}>{p.status}</Badge>
+                    <p className="text-xs text-muted-foreground">
+                      Collect {required} → {p.reward_title}
+                    </p>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Collect {p.stamps_required} stamps → {p.reward_title}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  <Badge variant={STATUS_VARIANT[p.status]}>{p.status}</Badge>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
