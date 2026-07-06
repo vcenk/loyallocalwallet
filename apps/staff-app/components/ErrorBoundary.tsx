@@ -9,7 +9,12 @@ import {
 import { supabase } from "../lib/supabase";
 import { colors } from "../lib/theme";
 
-type Props = { children: ReactNode };
+type Props = {
+  children: ReactNode;
+  // When provided, render this instead of the full-screen sign-out fallback —
+  // used to contain a single feature's failure (e.g. the camera).
+  fallback?: (error: Error) => ReactNode;
+};
 type State = { error: Error | null };
 
 // Catches JS render/lifecycle errors so the app shows a readable message and an
@@ -27,11 +32,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
+      if (this.props.fallback) return this.props.fallback(this.state.error);
       return (
         <View style={styles.container}>
           <Text style={styles.title}>Something went wrong</Text>
           <ScrollView style={styles.box}>
             <Text style={styles.msg}>{this.state.error.message}</Text>
+            {this.state.error.stack ? (
+              <Text style={styles.stack}>{this.state.error.stack}</Text>
+            ) : null}
           </ScrollView>
           <TouchableOpacity
             style={styles.button}
@@ -63,7 +72,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
   },
-  msg: { color: colors.danger, fontSize: 13 },
+  msg: { color: colors.danger, fontSize: 13, fontWeight: "700" },
+  stack: { color: colors.danger, fontSize: 11, marginTop: 10, opacity: 0.85 },
   button: {
     height: 52,
     backgroundColor: colors.primary,

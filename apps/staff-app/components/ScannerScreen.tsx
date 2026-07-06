@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,26 +8,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import { supabase } from "../lib/supabase";
 import { api, type ScanResult } from "../lib/api";
 import { colors } from "../lib/theme";
+import { CameraScanner } from "./CameraScanner";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 export function ScannerScreen({
   onScanned,
 }: {
   onScanned: (result: ScanResult) => void;
 }) {
-  const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState("");
-
-  // Ask for camera access once, as soon as the scanner opens.
-  useEffect(() => {
-    if (permission && !permission.granted && permission.canAskAgain) {
-      requestPermission();
-    }
-  }, [permission, requestPermission]);
+  const [showCamera, setShowCamera] = useState(false);
 
   async function lookup(barcodeValue: string) {
     if (busy || !barcodeValue) return;
@@ -51,28 +45,26 @@ export function ScannerScreen({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.cameraWrap}>
-        {!permission ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : !permission.granted ? (
-          <View style={styles.permission}>
-            <Text style={styles.permissionText}>
-              Camera access is needed to scan customer cards.
-            </Text>
-            <TouchableOpacity style={styles.button} onPress={requestPermission}>
-              <Text style={styles.buttonText}>Grant camera access</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <CameraView
-            style={styles.camera}
-            barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-            onBarcodeScanned={
-              busy ? undefined : ({ data }) => lookup(data)
-            }
-          />
-        )}
-      </View>
+      {showCamera ? (
+        <View style={styles.cameraWrap}>
+          <ErrorBoundary
+            fallback={() => (
+              <Text style={styles.cameraError}>
+                Camera unavailable on this device. Enter the card code below.
+              </Text>
+            )}
+          >
+            <CameraScanner onScan={lookup} disabled={busy} />
+          </ErrorBoundary>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.cameraToggle}
+          onPress={() => setShowCamera(true)}
+        >
+          <Text style={styles.cameraToggleText}>Scan with camera</Text>
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.hint}>Or enter the card code manually</Text>
       <View style={styles.manualRow}>
@@ -118,9 +110,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  camera: { flex: 1, width: "100%" },
-  permission: { padding: 24, gap: 16, alignItems: "center" },
-  permissionText: { color: colors.card, textAlign: "center", fontSize: 15 },
+  cameraError: { color: "#fff", textAlign: "center", padding: 24, fontSize: 14 },
+  cameraToggle: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    paddingVertical: 22,
+    alignItems: "center",
+  },
+  cameraToggleText: { color: colors.primary, fontSize: 16, fontWeight: "700" },
   hint: { color: colors.muted, fontSize: 13, textAlign: "center" },
   manualRow: { flexDirection: "row", gap: 10 },
   input: {
