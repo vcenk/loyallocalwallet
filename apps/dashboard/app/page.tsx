@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { HeroCard } from "@/components/hero-card";
 
 const NICHES = [
   "Cafés",
@@ -208,47 +209,12 @@ export default async function LandingPage() {
           </p>
         </div>
 
-        {/* Hero wallet mockup */}
+        {/* Hero wallet mockup — animated */}
         <div
-          className="fade-up relative mx-auto w-full max-w-sm"
+          className="fade-up"
           style={{ animationDelay: "220ms" }}
         >
-          <div className="absolute -right-6 top-8 hidden h-full w-full rotate-6 rounded-[2rem] bg-[#f6ddd8] sm:block" />
-          <div className="relative -rotate-3 rounded-[2rem] bg-gradient-to-br from-[#c0421e] to-[#ae3115] p-7 text-white shadow-2xl shadow-primary/30">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-widest opacity-80">
-                Main Street Cafe
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-primary">
-                M
-              </span>
-            </div>
-            <p className="mt-6 font-display text-2xl font-bold">Coffee Rewards</p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <span
-                  key={i}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-white/70"
-                  style={{ background: i < 7 ? "#fff" : "transparent" }}
-                >
-                  {i < 7 ? <Star className="h-3 w-3 text-primary" /> : null}
-                </span>
-              ))}
-            </div>
-            <div className="mt-6 flex items-center justify-between text-sm">
-              <span className="opacity-90">7 of 10 stamps</span>
-              <span className="font-semibold">Free coffee</span>
-            </div>
-          </div>
-          <div className="absolute -bottom-5 -left-5 flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-xl">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e6f4ec] text-[color:var(--success)]">
-              <Check className="h-4 w-4" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-xs font-bold text-foreground">3 more visits</p>
-              <p className="text-[11px] text-muted-foreground">until a reward</p>
-            </div>
-          </div>
+          <HeroCard />
         </div>
       </section>
 

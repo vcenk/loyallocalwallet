@@ -92,6 +92,73 @@ body {
   animation: marquee 28s linear infinite;
 }
 
+/* Hero wallet card motion */
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: rotate(-3deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-3deg) translateY(-12px);
+  }
+}
+.hero-float {
+  animation: hero-float 6s ease-in-out infinite;
+}
+
+@keyframes hero-badge-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.hero-badge-float {
+  animation: hero-badge-float 4.5s ease-in-out infinite;
+}
+
+@keyframes stamp-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.28);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.stamp-pop {
+  animation: stamp-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes hero-sheen {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(240%) skewX(-18deg);
+  }
+}
+.hero-sheen {
+  animation: hero-sheen 5.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float,
+  .hero-badge-float,
+  .hero-sheen,
+  .stamp-pop {
+    animation: none;
+  }
+}
+
 /* Subtle grain overlay */
 .grain::before {
   content: "";
