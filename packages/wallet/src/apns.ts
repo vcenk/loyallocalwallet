@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import http2 from "node:http2";
 import jwt from "jsonwebtoken";
-import { appleConfig } from "./env";
+import { appleConfig, loadCert } from "./env";
 
 // APNs provider token (ES256 JWT signed with the .p8 key), cached ~50 min.
 let cached: { token: string; iat: number } | null = null;
@@ -9,7 +8,10 @@ let cached: { token: string; iat: number } | null = null;
 function providerToken(): string {
   const now = Math.floor(Date.now() / 1000);
   if (cached && now - cached.iat < 3000) return cached.token;
-  const key = readFileSync(process.env.APPLE_APNS_PRIVATE_KEY_PATH ?? "", "utf8");
+  const key = loadCert(
+    "APPLE_APNS_PRIVATE_KEY_BASE64",
+    "APPLE_APNS_PRIVATE_KEY_PATH",
+  ).toString("utf8");
   const token = jwt.sign(
     { iss: process.env.APPLE_APNS_TEAM_ID, iat: now },
     key,

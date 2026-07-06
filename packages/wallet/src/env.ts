@@ -1,4 +1,15 @@
+import path from "node:path";
+
 // Config detection — wallet features stay dark until credentials are present.
+// Certs can come from base64 env vars (Vercel/serverless) OR file paths (local).
+
+function has(name: string): boolean {
+  return !!process.env[name];
+}
+
+function certAvailable(base64Env: string, pathEnv: string): boolean {
+  return has(base64Env) || has(pathEnv);
+}
 
 export function isGoogleWalletConfigured(): boolean {
   return !!(
@@ -12,7 +23,7 @@ export function isApnsConfigured(): boolean {
   return !!(
     process.env.APPLE_APNS_KEY_ID &&
     process.env.APPLE_APNS_TEAM_ID &&
-    process.env.APPLE_APNS_PRIVATE_KEY_PATH
+    certAvailable("APPLE_APNS_PRIVATE_KEY_BASE64", "APPLE_APNS_PRIVATE_KEY_PATH")
   );
 }
 
@@ -20,18 +31,28 @@ export function isAppleWalletConfigured(): boolean {
   return !!(
     process.env.APPLE_PASS_TYPE_IDENTIFIER &&
     process.env.APPLE_TEAM_ID &&
-    process.env.APPLE_PASS_CERT_PATH &&
-    process.env.APPLE_PASS_KEY_PATH &&
-    process.env.APPLE_WWDR_CERT_PATH &&
-    process.env.APPLE_PASS_MODEL_PATH
+    certAvailable("APPLE_PASS_CERT_BASE64", "APPLE_PASS_CERT_PATH") &&
+    certAvailable("APPLE_PASS_KEY_BASE64", "APPLE_PASS_KEY_PATH") &&
+    certAvailable("APPLE_WWDR_CERT_BASE64", "APPLE_WWDR_CERT_PATH")
   );
+}
+
+// Loads a PEM/key: prefers a base64 env var, falls back to a file path.
+export function loadCert(base64Env: string, pathEnv: string): Buffer {
+  const b64 = process.env[base64Env];
+  if (b64) return Buffer.from(b64, "base64");
+  const filePath = process.env[pathEnv];
+  if (filePath) {
+    // Lazy require so bundlers don't complain in non-Node contexts.
+    return require("node:fs").readFileSync(filePath);
+  }
+  throw new Error(`Missing ${base64Env} or ${pathEnv}`);
 }
 
 export function googleConfig() {
   return {
     issuerId: process.env.GOOGLE_WALLET_ISSUER_ID ?? "",
     serviceAccountEmail: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL ?? "",
-    // Private keys are often stored with escaped newlines in env.
     privateKey: (process.env.GOOGLE_WALLET_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
     origins: (process.env.GOOGLE_WALLET_ORIGINS ?? "")
       .split(",")
@@ -40,14 +61,16 @@ export function googleConfig() {
   };
 }
 
+// Default to the model folder bundled with the app when no path is set (Vercel).
+function defaultModelPath(): string {
+  return path.join(process.cwd(), "wallet-models", "loyallocal.pass");
+}
+
 export function appleConfig() {
   return {
     passTypeIdentifier: process.env.APPLE_PASS_TYPE_IDENTIFIER ?? "",
     teamIdentifier: process.env.APPLE_TEAM_ID ?? "",
-    certPath: process.env.APPLE_PASS_CERT_PATH ?? "",
-    keyPath: process.env.APPLE_PASS_KEY_PATH ?? "",
-    wwdrPath: process.env.APPLE_WWDR_CERT_PATH ?? "",
     keyPassphrase: process.env.APPLE_PASS_CERT_PASSWORD || undefined,
-    modelPath: process.env.APPLE_PASS_MODEL_PATH ?? "",
+    modelPath: process.env.APPLE_PASS_MODEL_PATH || defaultModelPath(),
   };
 }

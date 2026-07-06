@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { appleConfig } from "./env";
+import { appleConfig, loadCert } from "./env";
 import type { WalletCardData } from "./types";
 
 // Generates a signed .pkpass buffer. Requires the Apple certificates and a pass
@@ -33,9 +32,9 @@ export async function generateApplePkpass(
     {
       model: cfg.modelPath,
       certificates: {
-        wwdr: readFileSync(cfg.wwdrPath),
-        signerCert: readFileSync(cfg.certPath),
-        signerKey: readFileSync(cfg.keyPath),
+        wwdr: loadCert("APPLE_WWDR_CERT_BASE64", "APPLE_WWDR_CERT_PATH"),
+        signerCert: loadCert("APPLE_PASS_CERT_BASE64", "APPLE_PASS_CERT_PATH"),
+        signerKey: loadCert("APPLE_PASS_KEY_BASE64", "APPLE_PASS_KEY_PATH"),
         signerKeyPassphrase: cfg.keyPassphrase,
       },
     },
