@@ -30,7 +30,13 @@ const TEMPLATES: Template[] = [
   { label: "Pet groomer", name: "Groom Club", description: "5 grooms, get $20 off.", stamps: "5", reward: "$20 off", rewardDetails: "Any grooming.", bg: "#3f6212", fg: "#ffffff", icon: "paw" },
 ];
 
-export function CardBuilder({ businessName }: { businessName: string }) {
+export function CardBuilder({
+  businessName,
+  logoUrl,
+}: {
+  businessName: string;
+  logoUrl?: string | null;
+}) {
   const [name, setName] = useState("Coffee Rewards");
   const [description, setDescription] = useState("Earn a free coffee after 10 visits.");
   const [stamps, setStamps] = useState("10");
@@ -198,6 +204,7 @@ export function CardBuilder({ businessName }: { businessName: string }) {
             backgroundColor={bg}
             foregroundColor={fg}
             stampIcon={icon}
+            logoUrl={logoUrl}
           />
           <p className="mt-4 text-xs text-muted-foreground">
             This is how your card appears in Apple &amp; Google Wallet.

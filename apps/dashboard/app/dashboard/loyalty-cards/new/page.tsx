@@ -13,7 +13,7 @@ export default async function NewProgramPage({
   const supabase = await createClient();
   const { data: business } = await supabase
     .from("businesses")
-    .select("name")
+    .select("name, logo_url")
     .limit(1)
     .maybeSingle();
 
@@ -35,7 +35,10 @@ export default async function NewProgramPage({
         </p>
       ) : null}
 
-      <CardBuilder businessName={business?.name ?? "Your business"} />
+      <CardBuilder
+        businessName={business?.name ?? "Your business"}
+        logoUrl={business?.logo_url ?? null}
+      />
     </div>
   );
 }

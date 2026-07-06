@@ -49,7 +49,7 @@ export default async function EditProgramPage({
       .maybeSingle(),
     supabase
       .from("businesses")
-      .select("name")
+      .select("name, logo_url")
       .eq("id", program.business_id)
       .maybeSingle(),
   ]);
@@ -244,6 +244,7 @@ export default async function EditProgramPage({
               backgroundColor={bg}
               foregroundColor={fg}
               stampIcon={stampIcon}
+              logoUrl={business?.logo_url}
             />
           </div>
 

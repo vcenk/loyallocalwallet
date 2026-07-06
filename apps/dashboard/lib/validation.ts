@@ -40,6 +40,17 @@ export const designSchema = z.object({
   stampIcon: z.string().trim().max(24).optional(),
 });
 
+export const businessProfileSchema = z.object({
+  name: z.string().trim().min(2, "Business name is required.").max(120),
+  industry: z.string().trim().max(60).optional(),
+  phone: z.string().trim().max(30).optional(),
+  website: z.string().trim().max(200).optional(),
+  email: z
+    .union([z.string().trim().email("Enter a valid email."), z.literal("")])
+    .optional(),
+  brandColor: hexColor.optional(),
+});
+
 export const enrollSchema = z.object({
   firstName: z.string().trim().min(1, "Please enter your name.").max(80),
   email: z
