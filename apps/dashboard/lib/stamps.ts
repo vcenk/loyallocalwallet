@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@llw/db";
 import { calculateProgress, type ProgramType, type Progress } from "@llw/config";
-import { syncWalletForPass } from "./wallet";
+import { syncWalletForPass, notifyPass } from "./wallet";
 
 // Shared stamp-engine core, used by both the dashboard server actions and the
 // staff HTTP API. All mutations expect an admin (service-role) client; callers
@@ -228,5 +228,21 @@ export async function redeem(
     total_after: progress.total,
   });
   await syncWalletForPass(admin, pass.id);
+
+  // Non-incentivized review request after a redemption (a genuine happy moment).
+  // The stamp/reward is never contingent on leaving a review — compliance rule.
+  const { data: biz } = await admin
+    .from("businesses")
+    .select("name, google_review_url")
+    .eq("id", pass.business_id)
+    .maybeSingle();
+  if (biz?.google_review_url) {
+    await notifyPass(admin, pass.id, {
+      title: biz.name || "Thanks for visiting",
+      body: "Hope you enjoyed your reward! If you have a moment, we'd love a review 🙏",
+      link: biz.google_review_url,
+    });
+  }
+
   return { ok: true, progress, redemptionId: redemption.id };
 }

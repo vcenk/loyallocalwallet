@@ -64,5 +64,20 @@ export async function generateApplePkpass(
     value: data.customerName || "Member",
   });
 
+  // Latest campaign / review nudge. A changeMessage makes it surface as a
+  // lock-screen notification when the value changes and the pass is pushed.
+  // URLs in back fields are auto-detected as tappable links (e.g. review link).
+  if (data.message) {
+    const value = data.messageLink
+      ? `${data.message}\n${data.messageLink}`
+      : data.message;
+    pass.backFields.push({
+      key: "message",
+      label: "LATEST",
+      value,
+      changeMessage: "%@",
+    });
+  }
+
   return pass.getAsBuffer();
 }

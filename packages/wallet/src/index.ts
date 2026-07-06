@@ -10,6 +10,7 @@ export {
 export {
   createGoogleSaveUrl,
   patchGoogleObject,
+  addGoogleMessage,
   classIdFor,
   objectIdFor,
 } from "./google";

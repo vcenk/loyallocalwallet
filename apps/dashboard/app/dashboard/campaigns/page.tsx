@@ -10,6 +10,7 @@ import {
 } from "@llw/ui";
 import { createClient } from "@/lib/supabase/server";
 import { AUDIENCES } from "@/lib/campaigns";
+import { sendCampaign } from "./actions";
 
 const STATUS_VARIANT: Record<string, BadgeProps["variant"]> = {
   draft: "default",
@@ -29,7 +30,12 @@ function audienceLabel(key: string | null) {
   return AUDIENCES.find((a) => a.key === key)?.label ?? key ?? "—";
 }
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string; sent?: string; error?: string }>;
+}) {
+  const { created, sent, error } = await searchParams;
   const supabase = await createClient();
   const { data: campaigns } = await supabase
     .from("campaigns")
@@ -51,6 +57,20 @@ export default async function CampaignsPage() {
           </Button>
         }
       />
+
+      {created ? (
+        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+          Campaign created. Press Send when you&apos;re ready.
+        </p>
+      ) : sent !== undefined ? (
+        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+          Sent to {sent} wallet{sent === "1" ? "" : "s"}.
+        </p>
+      ) : error ? (
+        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
 
       {rows.length === 0 ? (
         <EmptyState
@@ -74,6 +94,7 @@ export default async function CampaignsPage() {
                   <th className="px-5 py-3 font-semibold">Recipients</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Created</th>
+                  <th className="px-5 py-3 font-semibold"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -112,6 +133,16 @@ export default async function CampaignsPage() {
                       </td>
                       <td className="px-5 py-3 text-muted-foreground">
                         {dateFmt.format(new Date(c.created_at))}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        {c.status === "draft" ? (
+                          <form action={sendCampaign}>
+                            <input type="hidden" name="campaignId" value={c.id} />
+                            <Button type="submit" size="sm">
+                              Send now
+                            </Button>
+                          </form>
+                        ) : null}
                       </td>
                     </tr>
                   );

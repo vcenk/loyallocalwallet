@@ -13,4 +13,7 @@ export interface WalletCardData {
   backgroundColor: string; // hex, e.g. #ae3115
   foregroundColor: string; // hex, e.g. #ffffff
   logoUrl?: string | null;
+  // Latest campaign / review nudge shown on the pass (Apple back field).
+  message?: string | null;
+  messageLink?: string | null;
 }

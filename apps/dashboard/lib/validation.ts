@@ -50,6 +50,9 @@ export const businessProfileSchema = z.object({
     .union([z.string().trim().email("Enter a valid email."), z.literal("")])
     .optional(),
   brandColor: hexColor.optional(),
+  googleReviewUrl: z
+    .union([z.string().trim().url("Enter a valid URL."), z.literal("")])
+    .optional(),
 });
 
 // Roles an owner/admin can assign to staff (never owner or platform_admin).

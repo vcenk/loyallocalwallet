@@ -7,6 +7,7 @@ import {
   isApnsConfigured,
   createGoogleSaveUrl,
   patchGoogleObject,
+  addGoogleMessage,
   sendPassUpdatePush,
   type WalletCardData,
 } from "@llw/wallet";
@@ -22,6 +23,8 @@ interface PassRow {
   program_id: string;
   current_stamps: number;
   rewards_available: number;
+  message_body: string | null;
+  message_link: string | null;
 }
 
 async function buildFromPass(
@@ -67,11 +70,13 @@ async function buildFromPass(
     backgroundColor: design?.background_color ?? "#ae3115",
     foregroundColor: design?.foreground_color ?? "#ffffff",
     logoUrl: business?.logo_url ?? null,
+    message: pass.message_body,
+    messageLink: pass.message_link,
   };
 }
 
 const PASS_COLUMNS =
-  "serial_number, business_id, customer_id, program_id, current_stamps, rewards_available";
+  "serial_number, business_id, customer_id, program_id, current_stamps, rewards_available, message_body, message_link";
 
 export async function cardDataBySerial(admin: DbClient, serial: string) {
   const { data } = await admin
@@ -125,6 +130,59 @@ export async function syncWalletForPass(admin: DbClient, passId: string) {
   } catch (err) {
     console.error("wallet sync failed", err);
   }
+}
+
+// Sends a message (campaign offer / review nudge) to a customer's wallet pass:
+// stores it so Apple's regenerated pass carries it, then delivers via Google
+// addMessage + Apple APNs. Returns true if it reached at least one wallet.
+// Never throws — one bad recipient must not abort a whole campaign.
+export async function notifyPass(
+  admin: DbClient,
+  passId: string,
+  msg: { title: string; body: string; link?: string | null },
+): Promise<boolean> {
+  let delivered = false;
+  try {
+    await admin
+      .from("wallet_passes")
+      .update({
+        message_body: msg.body,
+        message_link: msg.link ?? null,
+        message_updated_at: new Date().toISOString(),
+      })
+      .eq("id", passId);
+
+    const data = await cardDataByPassId(admin, passId);
+    if (!data) return false;
+
+    const body = msg.link ? `${msg.body} ${msg.link}` : msg.body;
+    if (isGoogleWalletConfigured()) {
+      try {
+        if (await addGoogleMessage(data.serialNumber, msg.title, body)) {
+          delivered = true;
+        }
+      } catch (err) {
+        console.error("google addMessage failed", err);
+      }
+    }
+    if (isAppleWalletConfigured() && isApnsConfigured()) {
+      const { data: regs } = await admin
+        .from("pass_registrations")
+        .select("push_token")
+        .eq("wallet_pass_id", passId);
+      for (const r of regs ?? []) {
+        try {
+          await sendPassUpdatePush(r.push_token);
+          delivered = true;
+        } catch (err) {
+          console.error("apns push failed", err);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("notifyPass failed", err);
+  }
+  return delivered;
 }
 
 // Base URL Apple devices call for pass updates.

@@ -21,6 +21,7 @@ export async function updateBusinessProfile(formData: FormData) {
     website: formData.get("website") || undefined,
     email: formData.get("email") || "",
     brandColor: formData.get("brandColor") || undefined,
+    googleReviewUrl: formData.get("googleReviewUrl") || "",
   });
   if (!parsed.success) settingsError(parsed.error.issues[0].message);
 
@@ -40,6 +41,7 @@ export async function updateBusinessProfile(formData: FormData) {
       website: parsed.data.website ?? null,
       email: parsed.data.email || null,
       brand_color: parsed.data.brandColor ?? undefined,
+      google_review_url: parsed.data.googleReviewUrl || null,
     })
     .eq("id", m.businessId);
   if (error) settingsError(error.message);

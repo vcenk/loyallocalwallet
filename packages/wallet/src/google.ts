@@ -136,3 +136,28 @@ export async function patchGoogleObject(data: WalletCardData): Promise<boolean> 
   if (!res.ok) throw new Error(`Google patch error: ${res.status}`);
   return true;
 }
+
+// Sends a notification to a saved Google Wallet pass (campaign / review nudge).
+// Returns false if the object doesn't exist yet (pass not saved).
+export async function addGoogleMessage(
+  serialNumber: string,
+  header: string,
+  body: string,
+): Promise<boolean> {
+  const token = await getAccessToken();
+  const objectId = objectIdFor(serialNumber);
+  const res = await fetch(
+    `${OBJECT_API}/loyaltyObject/${objectId}/addMessage`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: { header, body } }),
+    },
+  );
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`Google addMessage error: ${res.status}`);
+  return true;
+}

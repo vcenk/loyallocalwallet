@@ -59,6 +59,7 @@ export type Database = {
           email: string | null;
           logo_url: string | null;
           brand_color: string | null;
+          google_review_url: string | null;
           timezone: string | null;
           country: string | null;
           currency: string | null;
@@ -79,6 +80,7 @@ export type Database = {
           email?: string | null;
           logo_url?: string | null;
           brand_color?: string | null;
+          google_review_url?: string | null;
           timezone?: string | null;
           country?: string | null;
           currency?: string | null;
@@ -99,6 +101,7 @@ export type Database = {
           email?: string | null;
           logo_url?: string | null;
           brand_color?: string | null;
+          google_review_url?: string | null;
           timezone?: string | null;
           country?: string | null;
           currency?: string | null;
@@ -426,6 +429,9 @@ export type Database = {
           current_stamps: number;
           current_points: number;
           rewards_available: number;
+          message_body: string | null;
+          message_link: string | null;
+          message_updated_at: string | null;
           installed_at: string | null;
           uninstalled_at: string | null;
           last_updated_at: string | null;
@@ -446,6 +452,9 @@ export type Database = {
           current_stamps?: number;
           current_points?: number;
           rewards_available?: number;
+          message_body?: string | null;
+          message_link?: string | null;
+          message_updated_at?: string | null;
           installed_at?: string | null;
           uninstalled_at?: string | null;
           last_updated_at?: string | null;
@@ -466,6 +475,9 @@ export type Database = {
           current_stamps?: number;
           current_points?: number;
           rewards_available?: number;
+          message_body?: string | null;
+          message_link?: string | null;
+          message_updated_at?: string | null;
           installed_at?: string | null;
           uninstalled_at?: string | null;
           last_updated_at?: string | null;

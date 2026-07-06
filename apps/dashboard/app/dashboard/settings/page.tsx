@@ -131,6 +131,25 @@ export default async function SettingsPage({
                     className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card"
                   />
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="googleReviewUrl">
+                    Google review link{" "}
+                    <span className="text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Input
+                    id="googleReviewUrl"
+                    name="googleReviewUrl"
+                    type="url"
+                    placeholder="https://g.page/r/…/review"
+                    defaultValue={business?.google_review_url ?? ""}
+                    disabled={!canEdit}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    After a customer redeems a reward, we send a friendly,
+                    non-incentivized invite to review you here.
+                  </p>
+                </div>
                 {canEdit ? (
                   <Button type="submit">Save profile</Button>
                 ) : null}
