@@ -1,5 +1,32 @@
 import { appleConfig, loadCert } from "./env";
 import type { WalletCardData } from "./types";
+import { renderStripImages } from "./strip";
+
+// Fetches the shop logo and adds it as the pass logo + icon (overrides the model
+// placeholder). Best-effort — never throws.
+async function embedLogo(
+  pass: { addBuffer: (name: string, buf: Buffer) => void },
+  url: string,
+): Promise<void> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const src = Buffer.from(await res.arrayBuffer());
+    const sharp = (await import("sharp")).default;
+    const logo = (h: number) =>
+      sharp(src).resize({ height: h, fit: "inside" }).png().toBuffer();
+    const icon = (s: number) =>
+      sharp(src).resize(s, s, { fit: "cover" }).png().toBuffer();
+    pass.addBuffer("logo.png", await logo(40));
+    pass.addBuffer("logo@2x.png", await logo(80));
+    pass.addBuffer("logo@3x.png", await logo(120));
+    pass.addBuffer("icon.png", await icon(29));
+    pass.addBuffer("icon@2x.png", await icon(58));
+    pass.addBuffer("icon@3x.png", await icon(87));
+  } catch (err) {
+    console.error("logo embed failed", err);
+  }
+}
 
 // Generates a signed .pkpass buffer. Requires the Apple certificates and a pass
 // "model" (a .pass template folder with icon.png/logo.png and a base pass.json —
@@ -47,12 +74,38 @@ export async function generateApplePkpass(
     messageEncoding: "iso-8859-1",
   });
 
-  // storeCard fields (the model should declare a storeCard structure).
-  pass.primaryFields.push({
-    key: "progress",
-    label: "STAMPS",
-    value: `${data.currentStamps} / ${data.stampsRequired}`,
-  });
+  const total = Math.max(1, Math.round(data.stampsRequired || 1));
+  const filled = Math.max(0, Math.min(Math.round(data.currentStamps || 0), total));
+
+  // Compact progress in the header (top-right).
+  pass.headerFields.push({ key: "count", label: "", value: `${filled}/${total}` });
+
+  // Real logo + a visual stamp strip. All best-effort — a failure here must not
+  // break pass generation, so the text fallback below still shows progress.
+  let stripAdded = false;
+  try {
+    if (data.logoUrl) await embedLogo(pass, data.logoUrl);
+    const strips = await renderStripImages(data);
+    if (strips) {
+      for (const [name, buf] of Object.entries(strips)) pass.addBuffer(name, buf);
+      stripAdded = true;
+    }
+  } catch (err) {
+    console.error("pass enhancement failed", err);
+  }
+
+  // storeCard fields. When the stamp strip rendered, skip the big numeric primary
+  // (the strip is the hero); otherwise show stamps as filled/empty marks.
+  if (!stripAdded) {
+    pass.primaryFields.push({
+      key: "progress",
+      label: "STAMPS",
+      value:
+        total <= 12
+          ? "●".repeat(filled) + "○".repeat(total - filled)
+          : `${filled} / ${total}`,
+    });
+  }
   pass.secondaryFields.push({
     key: "reward",
     label: "REWARD",
