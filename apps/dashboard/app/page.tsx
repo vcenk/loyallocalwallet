@@ -14,6 +14,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { HeroCard } from "@/components/hero-card";
 import { CardStack } from "@/components/card-stack";
+import { PhoneMockup } from "@/components/phone-mockup";
+import { ComparisonTable } from "@/components/comparison-table";
 
 const NICHES = [
   "Cafés",
@@ -323,6 +325,43 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Phone / lock-screen moment */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#fce3dd] to-[#f6ddd8] px-8 py-14 md:px-16 md:py-20">
+          <Sparkles className="pointer-events-none absolute -right-6 -top-6 h-44 w-44 text-primary/10" />
+          <div className="relative grid items-center gap-12 md:grid-cols-2">
+            <div>
+              <span className="inline-block border-b-2 border-accent pb-1 text-sm font-bold uppercase tracking-widest text-primary">
+                Always with them
+              </span>
+              <h2 className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight text-foreground md:text-5xl">
+                On the lock screen — not lost in a drawer.
+              </h2>
+              <p className="mt-5 max-w-md text-lg text-muted-foreground">
+                The card sits in Apple &amp; Google Wallet, right where they keep
+                their boarding passes. Every stamp shows up on their lock screen,
+                and a nudge when they&apos;re one visit from a reward.
+              </p>
+              <ul className="mt-7 space-y-3">
+                {[
+                  "80% of paper cards never get redeemed — this one can't be lost",
+                  "Progress updates the moment your staff taps “add stamp”",
+                  "A gentle reminder when they're close to a reward",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-3">
+                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--success)]" strokeWidth={3} />
+                    <span className="text-base text-foreground">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-center">
+              <PhoneMockup />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features bento */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-8">
         <SectionEyebrow>Everything you need</SectionEyebrow>
@@ -376,6 +415,21 @@ export default async function LandingPage() {
             business: who came back, who vanished, and who&apos;s one visit from
             a reward.
           </p>
+        </div>
+      </section>
+
+      {/* Comparison */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <SectionEyebrow>How we compare</SectionEyebrow>
+        <h2 className="mt-3 max-w-2xl font-display text-4xl font-bold tracking-tight md:text-5xl">
+          More than a digital punch card.
+        </h2>
+        <p className="mt-3 max-w-xl text-lg text-muted-foreground">
+          A real wallet card that also tells you who&apos;s slipping away — and
+          helps you bring them back.
+        </p>
+        <div className="mt-12">
+          <ComparisonTable />
         </div>
       </section>
 
