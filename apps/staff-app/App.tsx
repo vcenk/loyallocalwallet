@@ -8,6 +8,7 @@ import { colors } from "./lib/theme";
 import { LoginScreen } from "./components/LoginScreen";
 import { ScannerScreen } from "./components/ScannerScreen";
 import { ResultScreen } from "./components/ResultScreen";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -29,17 +30,19 @@ export default function App() {
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
-      {!ready ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : !session ? (
-        <LoginScreen />
-      ) : scan ? (
-        <ResultScreen scan={scan} onBack={() => setScan(null)} />
-      ) : (
-        <ScannerScreen onScanned={setScan} />
-      )}
+      <ErrorBoundary>
+        {!ready ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.primary} size="large" />
+          </View>
+        ) : !session ? (
+          <LoginScreen />
+        ) : scan ? (
+          <ResultScreen scan={scan} onBack={() => setScan(null)} />
+        ) : (
+          <ScannerScreen onScanned={setScan} />
+        )}
+      </ErrorBoundary>
     </View>
   );
 }

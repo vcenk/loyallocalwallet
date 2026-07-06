@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,13 @@ export function ScannerScreen({
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState("");
+
+  // Ask for camera access once, as soon as the scanner opens.
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   async function lookup(barcodeValue: string) {
     if (busy || !barcodeValue) return;
