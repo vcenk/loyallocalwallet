@@ -993,7 +993,7 @@ export type Database = {
         | "business_admin"
         | "manager"
         | "staff";
-      program_type: "stamps" | "points" | "visits";
+      program_type: "stamps" | "points" | "visits" | "spend";
       program_status: "draft" | "active" | "paused" | "archived";
       pass_platform: "apple" | "google";
       pass_status: "created" | "installed" | "active" | "voided" | "deleted";

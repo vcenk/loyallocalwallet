@@ -19,8 +19,50 @@ export function getPlanLimits(planKey: string | null | undefined): PlanLimits {
 }
 
 // Program constants (mirror the DB enums; used for UI selects).
-export const PROGRAM_TYPES = ["stamps", "points", "visits"] as const;
+export const PROGRAM_TYPES = ["stamps", "points", "visits", "spend"] as const;
 export type ProgramType = (typeof PROGRAM_TYPES)[number];
+
+// How each reward model presents to shop + customer. The math is identical
+// (calculateProgress sums quantity ÷ required); only the unit/label differ.
+export interface RewardModel {
+  key: ProgramType;
+  label: string; // shown in the builder select
+  unit: string; // "stamps" | "points" | "visits"
+  currency: boolean; // spend mode → format as money
+  fixedQuantity: number | null; // +1 per action (stamps/visits) or staff-entered (points/spend)
+  actionVerb: string; // "Add stamp" | "Add points" | "Add visit" | "Record spend"
+  targetLabel: string; // "Stamps required" | "Points per reward" | ...
+  hint: string;
+}
+
+export const REWARD_MODELS: RewardModel[] = [
+  { key: "stamps", label: "Stamp card", unit: "stamps", currency: false, fixedQuantity: 1, actionVerb: "Add stamp", targetLabel: "Stamps required", hint: "A stamp per visit — buy 9, get 1 free." },
+  { key: "points", label: "Points", unit: "points", currency: false, fixedQuantity: null, actionVerb: "Add points", targetLabel: "Points per reward", hint: "Earn points per purchase; redeem at a target." },
+  { key: "visits", label: "Visit count", unit: "visits", currency: false, fixedQuantity: 1, actionVerb: "Add visit", targetLabel: "Visits required", hint: "Count each visit toward a reward." },
+  { key: "spend", label: "Money spent", unit: "$", currency: true, fixedQuantity: null, actionVerb: "Record spend", targetLabel: "Spend target ($)", hint: "Track dollars spent; reward at a threshold." },
+];
+
+export function rewardModel(type: ProgramType | string): RewardModel {
+  return REWARD_MODELS.find((m) => m.key === type) ?? REWARD_MODELS[0];
+}
+
+// Format a single value: "6 stamps", "60 points", "$60".
+export function formatUnits(type: ProgramType | string, value: number): string {
+  const m = rewardModel(type);
+  return m.currency ? `$${value}` : `${value} ${m.unit}`;
+}
+
+// Format progress: "6 of 10 stamps", "$60 of $100".
+export function formatProgressText(
+  type: ProgramType | string,
+  value: number,
+  required: number,
+): string {
+  const m = rewardModel(type);
+  return m.currency
+    ? `$${value} of $${required}`
+    : `${value} of ${required} ${m.unit}`;
+}
 
 export const PROGRAM_STATUSES = ["draft", "active", "paused", "archived"] as const;
 export type ProgramStatus = (typeof PROGRAM_STATUSES)[number];

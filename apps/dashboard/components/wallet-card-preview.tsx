@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { rewardModel, formatProgressText } from "@llw/config";
 import {
   Star,
   Coffee,
@@ -114,6 +115,7 @@ export interface WalletCardPreviewProps {
   pattern?: string;
   cardStyle?: string;
   stampStyle?: string;
+  programType?: string;
   logoUrl?: string | null;
 }
 
@@ -130,11 +132,19 @@ export function WalletCardPreview({
   pattern = "none",
   cardStyle = "modern",
   stampStyle = "circles",
+  programType = "stamps",
   logoUrl,
 }: WalletCardPreviewProps) {
   const Icon = STAMP_ICONS[stampIcon] ?? Star;
-  const total = Math.max(1, Math.min(stampsRequired || 1, 12));
-  const filled = Math.max(0, Math.min(currentStamps, total));
+  const model = rewardModel(programType);
+  // Points/spend counts can be large → always a progress bar. Stamps/visits
+  // render individual marks (capped at 12) unless "progress" style is chosen.
+  const useBar = model.fixedQuantity === null || stampStyle === "progress";
+  const requiredRaw = Math.max(1, stampsRequired || 1);
+  const filledRaw = Math.max(0, currentStamps);
+  const total = Math.min(requiredRaw, 12);
+  const filled = Math.min(filledRaw, total);
+  const frac = Math.min(1, filledRaw / requiredRaw);
   const overlay = patternStyle(pattern, foregroundColor);
   const shell = CARD_STYLES[cardStyle] ?? CARD_STYLES.modern;
 
@@ -188,7 +198,7 @@ export function WalletCardPreview({
           {programName || "Loyalty card"}
         </p>
 
-        {stampStyle === "progress" ? (
+        {useBar ? (
           <div className="mt-5">
             <div
               className="h-3.5 w-full overflow-hidden rounded-full"
@@ -196,10 +206,7 @@ export function WalletCardPreview({
             >
               <div
                 className="h-full rounded-full transition-all"
-                style={{
-                  width: `${(filled / total) * 100}%`,
-                  backgroundColor: foregroundColor,
-                }}
+                style={{ width: `${frac * 100}%`, backgroundColor: foregroundColor }}
               />
             </div>
           </div>
@@ -232,7 +239,7 @@ export function WalletCardPreview({
 
         <div className="mt-5 flex items-center justify-between text-sm">
           <span className="opacity-85">
-            {filled} of {total} stamps
+            {formatProgressText(programType, Math.min(filledRaw, requiredRaw), requiredRaw)}
           </span>
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"

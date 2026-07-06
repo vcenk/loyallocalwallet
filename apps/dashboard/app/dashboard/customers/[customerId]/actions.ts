@@ -48,9 +48,13 @@ export async function addStamp(formData: FormData) {
   const customerId = String(formData.get("customerId") ?? "");
   const isBonus = formData.get("eventType") === "bonus";
   const reason = String(formData.get("reason") ?? "");
+  // Points/spend programs send an amount; stamps/visits omit it (defaults to 1).
+  const amountRaw = Number(formData.get("amount"));
+  const quantity =
+    Number.isFinite(amountRaw) && amountRaw > 0 ? Math.floor(amountRaw) : 1;
 
   const { admin, ctx, pass, program } = await context(passId, customerId);
-  await addStampCore(admin, ctx, pass, program, { isBonus, reason });
+  await addStampCore(admin, ctx, pass, program, { isBonus, reason, quantity });
 
   revalidatePath(`/dashboard/customers/${customerId}`);
   back(customerId, "saved=1");

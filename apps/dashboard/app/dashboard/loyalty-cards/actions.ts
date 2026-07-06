@@ -5,11 +5,19 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveMembership } from "@/lib/business";
 import { getBusinessPlan, countPrograms } from "@/lib/plan";
+import { PROGRAM_TYPES, type ProgramType } from "@llw/config";
 import {
   programDetailsSchema,
   programStatusSchema,
   designSchema,
 } from "@/lib/validation";
+
+function parseProgramType(value: FormDataEntryValue | null): ProgramType {
+  const v = String(value ?? "stamps");
+  return (PROGRAM_TYPES as readonly string[]).includes(v)
+    ? (v as ProgramType)
+    : "stamps";
+}
 
 function parseDetails(formData: FormData) {
   return programDetailsSchema.safeParse({
@@ -52,7 +60,7 @@ export async function createProgram(formData: FormData) {
       business_id: m.businessId,
       name: parsed.data.name,
       description: parsed.data.description ?? null,
-      program_type: "stamps",
+      program_type: parseProgramType(formData.get("rewardModel")),
       status: "draft",
       stamps_required: parsed.data.stampsRequired,
       reward_title: parsed.data.rewardTitle,
@@ -112,6 +120,7 @@ export async function updateProgram(formData: FormData) {
     .update({
       name: parsed.data.name,
       description: parsed.data.description ?? null,
+      program_type: parseProgramType(formData.get("rewardModel")),
       stamps_required: parsed.data.stampsRequired,
       reward_title: parsed.data.rewardTitle,
       reward_description: parsed.data.rewardDescription ?? null,

@@ -7,6 +7,7 @@ import {
   EmptyState,
   type BadgeProps,
 } from "@llw/ui";
+import { formatUnits } from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCardPreview } from "@/components/wallet-card-preview";
 
@@ -24,7 +25,7 @@ export default async function LoyaltyCardsPage() {
     await Promise.all([
       supabase
         .from("loyalty_programs")
-        .select("id, name, status, stamps_required, reward_title")
+        .select("id, name, status, stamps_required, reward_title, program_type")
         .order("created_at", { ascending: false }),
       supabase.from("card_designs").select("*"),
       supabase.from("businesses").select("name, logo_url").limit(1).maybeSingle(),
@@ -83,13 +84,16 @@ export default async function LoyaltyCardsPage() {
                   foregroundColor={d?.foreground_color ?? "#ffffff"}
                   stampIcon={d?.stamp_icon ?? "star"}
                   pattern={d?.pattern ?? "none"}
+                  cardStyle={d?.card_style ?? "modern"}
+                  stampStyle={d?.stamp_style ?? "circles"}
+                  programType={p.program_type}
                   logoUrl={business?.logo_url}
                 />
                 <div className="mt-4 flex items-center justify-between px-1">
                   <div>
                     <p className="font-semibold text-foreground">{p.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Collect {required} → {p.reward_title}
+                      {formatUnits(p.program_type, required)} → {p.reward_title}
                     </p>
                   </div>
                   <Badge variant={STATUS_VARIANT[p.status]}>{p.status}</Badge>

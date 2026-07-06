@@ -12,7 +12,7 @@ import {
   CardDescription,
   CardContent,
 } from "@llw/ui";
-import { EDITABLE_PROGRAM_STATUSES } from "@llw/config";
+import { EDITABLE_PROGRAM_STATUSES, REWARD_MODELS, rewardModel } from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
 import {
   WalletCardPreview,
@@ -124,15 +124,31 @@ export default async function EditProgramPage({
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label htmlFor="rewardModel">Reward model</Label>
+                  <select
+                    id="rewardModel"
+                    name="rewardModel"
+                    defaultValue={program.program_type}
+                    className={SELECT_CLASS}
+                  >
+                    {REWARD_MODELS.map((m) => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="stampsRequired">Stamps required</Label>
+                    <Label htmlFor="stampsRequired">
+                      {rewardModel(program.program_type).targetLabel}
+                    </Label>
                     <Input
                       id="stampsRequired"
                       name="stampsRequired"
                       type="number"
                       min={1}
-                      max={50}
+                      max={100000}
                       defaultValue={stampsRequired}
                       required
                     />
@@ -286,6 +302,7 @@ export default async function EditProgramPage({
               pattern={cardPattern}
               cardStyle={cardStyle}
               stampStyle={stampStyle}
+              programType={program.program_type}
               logoUrl={business?.logo_url}
             />
           </div>

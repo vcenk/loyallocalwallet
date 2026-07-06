@@ -9,7 +9,12 @@ import {
   Calendar,
 } from "lucide-react";
 import { PageHeader, Button, Badge, Card, CardContent } from "@llw/ui";
-import { calculateProgress, BONUS_STAMP_REASONS } from "@llw/config";
+import {
+  calculateProgress,
+  BONUS_STAMP_REASONS,
+  rewardModel,
+  formatUnits,
+} from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCardPreview } from "@/components/wallet-card-preview";
 import { addStamp, redeemReward } from "./actions";
@@ -107,6 +112,7 @@ export default async function CustomerDetailPage({
   let fg = "#ffffff";
   let stampIcon = "star";
   let pattern = "none";
+  let programType = "stamps";
 
   if (pass) {
     const [{ data: prog }, { data: ev }, { data: red }, { data: design }] =
@@ -123,6 +129,7 @@ export default async function CustomerDetailPage({
       programName = prog.name;
       rewardTitle = prog.reward_title;
       stampsRequired = prog.stamps_required ?? 10;
+      programType = prog.program_type;
       progress = calculateProgress({ programType: prog.program_type, stampsRequired, events });
     }
     if (design) {
@@ -152,6 +159,8 @@ export default async function CustomerDetailPage({
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
 
   const rewardReady = (progress?.rewardsAvailable ?? 0) > 0;
+  const model = rewardModel(programType);
+  const money = model.currency;
 
   return (
     <div>
@@ -201,17 +210,17 @@ export default async function CustomerDetailPage({
                       </p>
                     ) : (
                       <p className="mt-1 font-display text-3xl font-bold text-foreground">
-                        {progress.towardNext}
+                        {money ? `$${progress.towardNext}` : progress.towardNext}
                         <span className="text-xl text-muted-foreground">
                           {" "}
-                          / {progress.required}
+                          / {money ? `$${progress.required}` : progress.required}
                         </span>
                       </p>
                     )}
                     <p className="mt-1 text-sm text-muted-foreground">
                       {rewardReady
                         ? rewardTitle
-                        : `stamps toward ${rewardTitle} · ${progress.total} lifetime`}
+                        : `toward ${rewardTitle} · ${formatUnits(programType, progress.total)} lifetime`}
                     </p>
                   </div>
                   {rewardReady ? (
@@ -220,13 +229,28 @@ export default async function CustomerDetailPage({
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <form action={addStamp}>
+                  <form action={addStamp} className="flex items-end gap-2">
                     <input type="hidden" name="passId" value={pass.id} />
                     <input type="hidden" name="customerId" value={customer.id} />
                     <input type="hidden" name="eventType" value="earn" />
+                    {model.fixedQuantity === null ? (
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                          {money ? "Amount ($)" : "Amount"}
+                        </label>
+                        <input
+                          name="amount"
+                          type="number"
+                          min={1}
+                          defaultValue={money ? 5 : 10}
+                          className={SELECT_CLASS}
+                          style={{ width: 96 }}
+                        />
+                      </div>
+                    ) : null}
                     <Button type="submit" size="lg">
                       <Stamp className="h-4 w-4" />
-                      Add stamp
+                      {model.actionVerb}
                     </Button>
                   </form>
 
@@ -322,6 +346,7 @@ export default async function CustomerDetailPage({
               foregroundColor={fg}
               stampIcon={stampIcon}
               pattern={pattern}
+              programType={programType}
               logoUrl={business?.logo_url}
             />
           </div>

@@ -142,12 +142,19 @@ export async function addStamp(
   ctx: StaffContext,
   pass: PassInfo,
   program: ProgramInfo,
-  opts: { isBonus?: boolean; reason?: string; locationId?: string | null } = {},
+  opts: {
+    isBonus?: boolean;
+    reason?: string;
+    locationId?: string | null;
+    quantity?: number;
+  } = {},
 ): Promise<Progress> {
   const isBonus = opts.isBonus ?? false;
   const reason = (
     opts.reason?.trim() || (isBonus ? "Bonus" : "Purchase")
   ).slice(0, 120);
+  // Points/spend programs pass a variable amount; stamps/visits default to 1.
+  const quantity = Math.max(1, Math.floor(opts.quantity ?? 1));
 
   await admin.from("stamp_events").insert({
     business_id: pass.business_id,
@@ -157,7 +164,7 @@ export async function addStamp(
     wallet_pass_id: pass.id,
     staff_member_id: ctx.staffMemberId,
     event_type: isBonus ? "bonus" : "earn",
-    quantity: 1,
+    quantity,
     reason,
   });
 
