@@ -12,10 +12,17 @@ import {
   Stamp,
   Gift,
   Moon,
+  Zap,
+  Megaphone,
+  Star,
+  Image as ImageIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveMembership } from "@/lib/business";
 import { getOverviewStats } from "@/lib/analytics";
+import { getAutomations } from "@/lib/automations";
+import { buildSuggestions, type Suggestion } from "@/lib/suggestions";
 
 function greeting(hour: number) {
   if (hour < 12) return "Good morning";
@@ -23,19 +30,49 @@ function greeting(hour: number) {
   return "Good evening";
 }
 
+const SUGGESTION_ICONS: Record<Suggestion["icon"], LucideIcon> = {
+  zap: Zap,
+  megaphone: Megaphone,
+  gift: Gift,
+  star: Star,
+  sparkles: Sparkles,
+  image: ImageIcon,
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const membership = await getActiveMembership(supabase);
 
-  const [{ data: business }, stats] = await Promise.all([
-    supabase.from("businesses").select("name").limit(1).maybeSingle(),
+  const [{ data: business }, stats, automations] = await Promise.all([
+    membership
+      ? supabase
+          .from("businesses")
+          .select("name, logo_url, google_review_url, welcome_bonus_stamps")
+          .eq("id", membership.businessId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     membership
       ? getOverviewStats(supabase, membership.businessId)
+      : Promise.resolve(null),
+    membership
+      ? getAutomations(supabase, membership.businessId)
       : Promise.resolve(null),
   ]);
 
   const businessName = business?.name ?? "there";
   const hello = greeting(new Date().getHours());
+
+  const suggestions = buildSuggestions({
+    inactiveCount: stats?.inactiveCount ?? 0,
+    closeToReward: stats?.closeToReward ?? 0,
+    hasLogo: !!business?.logo_url,
+    hasReviewUrl: !!business?.google_review_url,
+    welcomeBonus: business?.welcome_bonus_stamps ?? 0,
+    anyAutomationEnabled: automations
+      ? Object.values(automations).some((a) => a.enabled)
+      : false,
+    winBackEnabled: automations?.win_back.enabled ?? false,
+  });
 
   const miniCards = [
     {
@@ -63,8 +100,6 @@ export default async function DashboardPage() {
       hint: "No visit in 21+ days",
     },
   ];
-
-  const inactive = stats?.inactiveCount ?? 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -137,32 +172,49 @@ export default async function DashboardPage() {
           <p className="mt-4 text-xs opacity-80">Customers within 2 stamps</p>
         </div>
 
-        {/* Win-back suggestion */}
-        <div className="fade-up relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-[#fce3dd] to-[#f6ddd8] p-8 shadow-sm md:col-span-8" style={{ animationDelay: "160ms" }}>
-          <div className="relative z-10 max-w-md">
-            <span className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
-              Suggestion
-            </span>
-            <h2 className="mb-3 font-display text-2xl font-bold leading-tight text-foreground">
-              {inactive > 0
-                ? `Bring back ${inactive} inactive customer${inactive > 1 ? "s" : ""}`
-                : "No inactive customers yet"}
-            </h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              {inactive > 0
-                ? "These regulars haven't visited in 21+ days. Send a “We miss you” offer to re-engage them."
-                : "Once regulars start fading away, we'll suggest a win-back campaign here."}
-            </p>
-            <Link
-              href="/dashboard/analytics"
-              className="inline-flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95"
-            >
-              {inactive > 0 ? "Review & send" : "View analytics"}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+        {/* Suggested actions */}
+        <div className="fade-up rounded-3xl border border-border bg-card p-6 shadow-sm md:col-span-8" style={{ animationDelay: "160ms" }}>
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h3 className="font-display text-lg font-bold text-foreground">
+              Suggested for you
+            </h3>
           </div>
-          <Sparkles className="pointer-events-none absolute -right-4 bottom-0 h-44 w-44 rotate-12 text-primary/10" />
+          {suggestions.length === 0 ? (
+            <div className="flex items-center gap-3 rounded-2xl bg-[#e6f4ec] p-5 text-[color:var(--success)]">
+              <PartyPopper className="h-5 w-5" />
+              <p className="text-sm font-medium">
+                You&apos;re all set — your marketing is running itself. Nice work!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map((s) => {
+                const Icon = SUGGESTION_ICONS[s.icon];
+                return (
+                  <Link
+                    key={s.key}
+                    href={s.href}
+                    className="group flex items-center gap-4 rounded-2xl border border-transparent bg-muted p-4 transition-all hover:border-border active:scale-[0.99]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-foreground">{s.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {s.description}
+                      </p>
+                    </div>
+                    <span className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-primary group-hover:underline sm:inline-flex">
+                      {s.cta}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="fade-up rounded-2xl border border-border bg-card p-6 shadow-sm md:col-span-4" style={{ animationDelay: "200ms" }}>

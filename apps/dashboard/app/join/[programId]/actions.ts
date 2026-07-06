@@ -8,6 +8,7 @@ import { generateSerial, generateReferralCode } from "@/lib/token";
 import { rateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
 import { fireWelcome } from "@/lib/automations";
 import { processReferral } from "@/lib/referrals";
+import { loadProgram, giveSystemBonus } from "@/lib/stamps";
 
 export async function enroll(formData: FormData) {
   const programId = String(formData.get("programId") ?? "");
@@ -89,6 +90,31 @@ export async function enroll(formData: FormData) {
 
   // Instant welcome (stored on the pass; shows when they add it to a wallet).
   await fireWelcome(supabase, program.business_id, customer.id, pass.id);
+
+  // Welcome bonus: auto-grant stamps on enrollment if the shop enabled it.
+  const { data: biz } = await supabase
+    .from("businesses")
+    .select("welcome_bonus_stamps")
+    .eq("id", program.business_id)
+    .maybeSingle();
+  const welcomeBonus = biz?.welcome_bonus_stamps ?? 0;
+  if (welcomeBonus > 0) {
+    const prog = await loadProgram(supabase, program.id);
+    if (prog) {
+      await giveSystemBonus(
+        supabase,
+        {
+          id: pass.id,
+          business_id: program.business_id,
+          customer_id: customer.id,
+          program_id: program.id,
+        },
+        prog,
+        "Welcome bonus",
+        welcomeBonus,
+      );
+    }
+  }
 
   // Refer-a-friend: if they came via a ?ref= link, credit both sides.
   const referrerCode = String(formData.get("ref") ?? "").trim();

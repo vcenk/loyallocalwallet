@@ -185,12 +185,13 @@ export async function addStamp(
   return progress;
 }
 
-// System-granted bonus stamp (e.g. a referral reward) — no staff actor.
+// System-granted bonus stamp(s) (referral reward, welcome bonus) — no staff actor.
 export async function giveSystemBonus(
   admin: DbClient,
   pass: PassInfo,
   program: ProgramInfo,
   reason: string,
+  quantity = 1,
 ): Promise<Progress> {
   await admin.from("stamp_events").insert({
     business_id: pass.business_id,
@@ -199,7 +200,7 @@ export async function giveSystemBonus(
     wallet_pass_id: pass.id,
     staff_member_id: null,
     event_type: "bonus",
-    quantity: 1,
+    quantity,
     reason: reason.slice(0, 120),
   });
 

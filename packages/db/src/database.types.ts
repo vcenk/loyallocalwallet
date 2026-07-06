@@ -147,6 +147,7 @@ export type Database = {
           logo_url: string | null;
           brand_color: string | null;
           google_review_url: string | null;
+          welcome_bonus_stamps: number;
           timezone: string | null;
           country: string | null;
           currency: string | null;
@@ -168,6 +169,7 @@ export type Database = {
           logo_url?: string | null;
           brand_color?: string | null;
           google_review_url?: string | null;
+          welcome_bonus_stamps?: number;
           timezone?: string | null;
           country?: string | null;
           currency?: string | null;
@@ -189,6 +191,7 @@ export type Database = {
           logo_url?: string | null;
           brand_color?: string | null;
           google_review_url?: string | null;
+          welcome_bonus_stamps?: number;
           timezone?: string | null;
           country?: string | null;
           currency?: string | null;

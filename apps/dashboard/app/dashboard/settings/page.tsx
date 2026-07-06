@@ -150,6 +150,23 @@ export default async function SettingsPage({
                     non-incentivized invite to review you here.
                   </p>
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="welcomeBonusStamps">Welcome bonus stamps</Label>
+                  <Input
+                    id="welcomeBonusStamps"
+                    name="welcomeBonusStamps"
+                    type="number"
+                    min={0}
+                    max={5}
+                    defaultValue={business?.welcome_bonus_stamps ?? 0}
+                    disabled={!canEdit}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Give new customers a head start — stamps added automatically
+                    when they enroll. 0 turns it off.
+                  </p>
+                </div>
                 {canEdit ? (
                   <Button type="submit">Save profile</Button>
                 ) : null}

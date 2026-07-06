@@ -53,6 +53,7 @@ export const businessProfileSchema = z.object({
   googleReviewUrl: z
     .union([z.string().trim().url("Enter a valid URL."), z.literal("")])
     .optional(),
+  welcomeBonusStamps: z.coerce.number().int().min(0).max(5).optional(),
 });
 
 // Roles an owner/admin can assign to staff (never owner or platform_admin).
