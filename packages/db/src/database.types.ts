@@ -297,6 +297,7 @@ export type Database = {
           foreground_color: string | null;
           label_color: string | null;
           stamp_icon: string | null;
+          pattern: string | null;
           apple_pass_type_identifier: string | null;
           google_class_id: string | null;
           created_at: string;
@@ -312,6 +313,7 @@ export type Database = {
           foreground_color?: string | null;
           label_color?: string | null;
           stamp_icon?: string | null;
+          pattern?: string | null;
           apple_pass_type_identifier?: string | null;
           google_class_id?: string | null;
           created_at?: string;
@@ -327,6 +329,7 @@ export type Database = {
           foreground_color?: string | null;
           label_color?: string | null;
           stamp_icon?: string | null;
+          pattern?: string | null;
           apple_pass_type_identifier?: string | null;
           google_class_id?: string | null;
           created_at?: string;

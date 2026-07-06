@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   WalletCardPreview,
   STAMP_ICON_KEYS,
+  PATTERN_KEYS,
 } from "@/components/wallet-card-preview";
 import { updateProgram, updateDesign } from "../actions";
 
@@ -57,6 +58,7 @@ export default async function EditProgramPage({
   const bg = design?.background_color ?? "#ae3115";
   const fg = design?.foreground_color ?? "#ffffff";
   const stampIcon = design?.stamp_icon ?? "star";
+  const cardPattern = design?.pattern ?? "none";
   const stampsRequired = program.stamps_required ?? 10;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -222,6 +224,21 @@ export default async function EditProgramPage({
                     ))}
                   </select>
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pattern">Background pattern</Label>
+                  <select
+                    id="pattern"
+                    name="pattern"
+                    defaultValue={cardPattern}
+                    className={SELECT_CLASS}
+                  >
+                    {PATTERN_KEYS.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <Button type="submit" variant="outline">
                   Save design
                 </Button>
@@ -244,6 +261,7 @@ export default async function EditProgramPage({
               backgroundColor={bg}
               foregroundColor={fg}
               stampIcon={stampIcon}
+              pattern={cardPattern}
               logoUrl={business?.logo_url}
             />
           </div>

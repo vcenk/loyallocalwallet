@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   Star,
   Coffee,
@@ -11,6 +12,7 @@ import {
   Stamp,
   Cake,
   Sparkle,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,9 +29,57 @@ export const STAMP_ICONS: Record<string, LucideIcon> = {
   stamp: Stamp,
   cake: Cake,
   sparkle: Sparkle,
+  utensils: UtensilsCrossed,
 };
 
 export const STAMP_ICON_KEYS = Object.keys(STAMP_ICONS);
+
+export const PATTERN_KEYS = [
+  "none",
+  "dots",
+  "diagonal",
+  "grid",
+  "crosshatch",
+  "vertical",
+];
+
+// Returns a CSS overlay for the chosen pattern, tinted with the text color.
+export function patternStyle(
+  pattern: string | undefined,
+  fg: string,
+): CSSProperties | null {
+  switch (pattern) {
+    case "dots":
+      return {
+        backgroundImage: `radial-gradient(${fg} 1.5px, transparent 1.6px)`,
+        backgroundSize: "16px 16px",
+        opacity: 0.16,
+      };
+    case "diagonal":
+      return {
+        backgroundImage: `repeating-linear-gradient(45deg, ${fg} 0 1px, transparent 1px 12px)`,
+        opacity: 0.14,
+      };
+    case "grid":
+      return {
+        backgroundImage: `linear-gradient(${fg} 1px, transparent 1px), linear-gradient(90deg, ${fg} 1px, transparent 1px)`,
+        backgroundSize: "22px 22px",
+        opacity: 0.12,
+      };
+    case "crosshatch":
+      return {
+        backgroundImage: `repeating-linear-gradient(45deg, ${fg} 0 1px, transparent 1px 10px), repeating-linear-gradient(-45deg, ${fg} 0 1px, transparent 1px 10px)`,
+        opacity: 0.12,
+      };
+    case "vertical":
+      return {
+        backgroundImage: `repeating-linear-gradient(90deg, ${fg} 0 1px, transparent 1px 10px)`,
+        opacity: 0.12,
+      };
+    default:
+      return null;
+  }
+}
 
 export interface WalletCardPreviewProps {
   businessName: string;
@@ -40,6 +90,7 @@ export interface WalletCardPreviewProps {
   backgroundColor?: string;
   foregroundColor?: string;
   stampIcon?: string;
+  pattern?: string;
   logoUrl?: string | null;
 }
 
@@ -53,17 +104,22 @@ export function WalletCardPreview({
   backgroundColor = "#ae3115",
   foregroundColor = "#ffffff",
   stampIcon = "star",
+  pattern = "none",
   logoUrl,
 }: WalletCardPreviewProps) {
   const Icon = STAMP_ICONS[stampIcon] ?? Star;
   const total = Math.max(1, Math.min(stampsRequired || 1, 12));
   const filled = Math.max(0, Math.min(currentStamps, total));
+  const overlay = patternStyle(pattern, foregroundColor);
 
   return (
     <div
       className="relative w-full max-w-sm overflow-hidden rounded-[1.75rem] p-6 shadow-2xl"
       style={{ backgroundColor, color: foregroundColor }}
     >
+      {overlay ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0" style={overlay} />
+      ) : null}
       {/* sheen */}
       <div
         aria-hidden

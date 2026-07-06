@@ -6,6 +6,8 @@ import {
   WalletCardPreview,
   STAMP_ICONS,
   STAMP_ICON_KEYS,
+  PATTERN_KEYS,
+  patternStyle,
 } from "@/components/wallet-card-preview";
 import { createProgram } from "../actions";
 
@@ -19,13 +21,18 @@ interface Template {
   bg: string;
   fg: string;
   icon: string;
+  pattern?: string;
 }
 
 const TEMPLATES: Template[] = [
-  { label: "Café", name: "Coffee Rewards", description: "Earn a free coffee after 10 visits.", stamps: "10", reward: "Free coffee", rewardDetails: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", icon: "coffee" },
-  { label: "Bubble tea", name: "Bubble Tea Club", description: "Buy 8, get 1 free.", stamps: "8", reward: "Free drink", rewardDetails: "Any drink with one free topping.", bg: "#0f766e", fg: "#ffffff", icon: "sparkle" },
-  { label: "Barber", name: "Barber Loyalty", description: "Visit 5 times, get $10 off.", stamps: "5", reward: "$10 off", rewardDetails: "Any haircut.", bg: "#111827", fg: "#ffffff", icon: "scissors" },
-  { label: "Bakery", name: "Bakery Rewards", description: "Collect 8 stamps for a treat.", stamps: "8", reward: "Free pastry", rewardDetails: "Any single pastry.", bg: "#b45309", fg: "#ffffff", icon: "cookie" },
+  { label: "Café", name: "Coffee Rewards", description: "Earn a free coffee after 10 visits.", stamps: "10", reward: "Free coffee", rewardDetails: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", icon: "coffee", pattern: "dots" },
+  { label: "Coffee roaster", name: "Roaster Rewards", description: "Buy 10 bags, get 1 free.", stamps: "10", reward: "Free bag", rewardDetails: "One 250g bag.", bg: "#3f2d23", fg: "#ffffff", icon: "coffee" },
+  { label: "Bubble tea", name: "Bubble Tea Club", description: "Buy 8, get 1 free.", stamps: "8", reward: "Free drink", rewardDetails: "Any drink with a free topping.", bg: "#0f766e", fg: "#ffffff", icon: "sparkle" },
+  { label: "Bakery", name: "Bakery Rewards", description: "Collect 8 stamps for a treat.", stamps: "8", reward: "Free pastry", rewardDetails: "Any single pastry.", bg: "#b45309", fg: "#ffffff", icon: "cookie", pattern: "diagonal" },
+  { label: "Ice cream", name: "Scoop Club", description: "8 scoops, 1 free.", stamps: "8", reward: "Free scoop", rewardDetails: "Any single scoop.", bg: "#0e7490", fg: "#ffffff", icon: "ice-cream" },
+  { label: "Restaurant", name: "Diner Rewards", description: "Dine 8 times, get a free meal.", stamps: "8", reward: "Free meal", rewardDetails: "Up to $20 value.", bg: "#7c2d12", fg: "#ffffff", icon: "utensils", pattern: "grid" },
+  { label: "Food truck", name: "Street Eats Club", description: "Buy 6, get 1 free.", stamps: "6", reward: "Free item", rewardDetails: "Any main item.", bg: "#9a3412", fg: "#ffffff", icon: "utensils" },
+  { label: "Barber", name: "Barber Loyalty", description: "Visit 5 times, get $10 off.", stamps: "5", reward: "$10 off", rewardDetails: "Any haircut.", bg: "#111827", fg: "#ffffff", icon: "scissors", pattern: "vertical" },
   { label: "Nail salon", name: "Nail Club", description: "5 visits, get $15 off.", stamps: "5", reward: "$15 off", rewardDetails: "Any service.", bg: "#be185d", fg: "#ffffff", icon: "heart" },
   { label: "Pet groomer", name: "Groom Club", description: "5 grooms, get $20 off.", stamps: "5", reward: "$20 off", rewardDetails: "Any grooming.", bg: "#3f6212", fg: "#ffffff", icon: "paw" },
 ];
@@ -45,6 +52,7 @@ export function CardBuilder({
   const [bg, setBg] = useState("#4b2e2b");
   const [fg, setFg] = useState("#ffffff");
   const [icon, setIcon] = useState("coffee");
+  const [pattern, setPattern] = useState("dots");
 
   function applyTemplate(t: Template) {
     setName(t.name);
@@ -55,6 +63,7 @@ export function CardBuilder({
     setBg(t.bg);
     setFg(t.fg);
     setIcon(t.icon);
+    setPattern(t.pattern ?? "none");
   }
 
   const required = Math.max(1, Math.min(Number(stamps) || 10, 12));
@@ -69,7 +78,7 @@ export function CardBuilder({
           <p className="mb-3 text-sm font-semibold text-foreground">
             Start from a template
           </p>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
             {TEMPLATES.map((t) => {
               const TIcon = STAMP_ICONS[t.icon];
               return (
@@ -77,7 +86,7 @@ export function CardBuilder({
                   key={t.label}
                   type="button"
                   onClick={() => applyTemplate(t)}
-                  className="group flex w-28 shrink-0 flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center transition-all hover:border-primary hover:shadow-md"
+                  className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center transition-all hover:border-primary hover:shadow-md"
                 >
                   <span
                     className="flex h-12 w-full items-center justify-center rounded-xl"
@@ -99,6 +108,7 @@ export function CardBuilder({
           <input type="hidden" name="backgroundColor" value={bg} />
           <input type="hidden" name="foregroundColor" value={fg} />
           <input type="hidden" name="stampIcon" value={icon} />
+          <input type="hidden" name="pattern" value={pattern} />
 
           <div className="space-y-1.5">
             <Label htmlFor="name">Card name</Label>
@@ -135,32 +145,38 @@ export function CardBuilder({
             <p className="text-sm font-semibold text-foreground">Design</p>
             <div className="mt-4 flex flex-wrap items-end gap-6">
               <label className="space-y-1.5">
-                <span className="block text-xs font-medium text-muted-foreground">
-                  Background
-                </span>
-                <input
-                  type="color"
-                  value={bg}
-                  onChange={(e) => setBg(e.target.value)}
-                  className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card"
-                />
+                <span className="block text-xs font-medium text-muted-foreground">Background</span>
+                <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
               </label>
               <label className="space-y-1.5">
-                <span className="block text-xs font-medium text-muted-foreground">
-                  Text
-                </span>
-                <input
-                  type="color"
-                  value={fg}
-                  onChange={(e) => setFg(e.target.value)}
-                  className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card"
-                />
+                <span className="block text-xs font-medium text-muted-foreground">Text</span>
+                <input type="color" value={fg} onChange={(e) => setFg(e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg border border-input bg-card" />
               </label>
             </div>
 
-            <p className="mt-5 text-xs font-medium text-muted-foreground">
-              Stamp icon
-            </p>
+            <p className="mt-5 text-xs font-medium text-muted-foreground">Background pattern</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PATTERN_KEYS.map((p) => {
+                const active = p === pattern;
+                const st = patternStyle(p, fg);
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPattern(p)}
+                    title={p}
+                    className={`relative h-10 w-14 overflow-hidden rounded-lg border transition-all ${
+                      active ? "border-primary ring-2 ring-primary/30" : "border-border"
+                    }`}
+                    style={{ backgroundColor: bg }}
+                  >
+                    {st ? <span aria-hidden className="absolute inset-0" style={st} /> : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-5 text-xs font-medium text-muted-foreground">Stamp icon</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {STAMP_ICON_KEYS.map((key) => {
                 const IconC = STAMP_ICONS[key];
@@ -192,9 +208,7 @@ export function CardBuilder({
       {/* Live preview */}
       <div className="lg:col-span-2">
         <div className="sticky top-24">
-          <p className="mb-3 text-sm font-semibold text-foreground">
-            Live preview
-          </p>
+          <p className="mb-3 text-sm font-semibold text-foreground">Live preview</p>
           <WalletCardPreview
             businessName={businessName}
             programName={name}
@@ -204,10 +218,12 @@ export function CardBuilder({
             backgroundColor={bg}
             foregroundColor={fg}
             stampIcon={icon}
+            pattern={pattern}
             logoUrl={logoUrl}
           />
           <p className="mt-4 text-xs text-muted-foreground">
-            This is how your card appears in Apple &amp; Google Wallet.
+            This is how your card appears in the dashboard. Wallet passes use the
+            solid background color.
           </p>
         </div>
       </div>

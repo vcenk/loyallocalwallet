@@ -72,12 +72,14 @@ export async function createProgram(formData: FormData) {
   const bg = String(formData.get("backgroundColor") ?? "");
   const fg = String(formData.get("foregroundColor") ?? "");
   const icon = String(formData.get("stampIcon") ?? "").slice(0, 24);
+  const pattern = String(formData.get("pattern") ?? "none").slice(0, 24);
   await supabase.from("card_designs").insert({
     business_id: m.businessId,
     program_id: program.id,
     background_color: hex.test(bg) ? bg : "#ae3115",
     foreground_color: hex.test(fg) ? fg : "#ffffff",
     stamp_icon: icon || "star",
+    pattern: pattern || "none",
   });
 
   redirect(`/dashboard/loyalty-cards/${program.id}?created=1`);
@@ -130,6 +132,7 @@ export async function updateDesign(formData: FormData) {
     backgroundColor: formData.get("backgroundColor"),
     foregroundColor: formData.get("foregroundColor"),
     stampIcon: formData.get("stampIcon") || undefined,
+    pattern: formData.get("pattern") || undefined,
   });
 
   if (!parsed.success) {
@@ -148,6 +151,7 @@ export async function updateDesign(formData: FormData) {
       background_color: parsed.data.backgroundColor,
       foreground_color: parsed.data.foregroundColor,
       stamp_icon: parsed.data.stampIcon ?? "star",
+      pattern: parsed.data.pattern ?? "none",
     })
     .eq("program_id", programId)
     .eq("business_id", m.businessId);
