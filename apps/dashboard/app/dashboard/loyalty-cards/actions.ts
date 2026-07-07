@@ -19,13 +19,23 @@ function parseProgramType(value: FormDataEntryValue | null): ProgramType {
     : "stamps";
 }
 
+function formString(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : "";
+}
+
+function optionalFormString(formData: FormData, key: string): string | undefined {
+  const value = formString(formData, key).trim();
+  return value ? value : undefined;
+}
+
 function parseDetails(formData: FormData) {
   return programDetailsSchema.safeParse({
-    name: formData.get("name"),
-    description: formData.get("description") || undefined,
-    stampsRequired: formData.get("stampsRequired"),
-    rewardTitle: formData.get("rewardTitle"),
-    rewardDescription: formData.get("rewardDescription") || undefined,
+    name: formString(formData, "name"),
+    description: optionalFormString(formData, "description"),
+    stampsRequired: formString(formData, "stampsRequired"),
+    rewardTitle: formString(formData, "rewardTitle"),
+    rewardDescription: optionalFormString(formData, "rewardDescription"),
   });
 }
 
@@ -142,12 +152,12 @@ export async function updateProgram(formData: FormData) {
 export async function updateDesign(formData: FormData) {
   const programId = String(formData.get("programId") ?? "");
   const parsed = designSchema.safeParse({
-    backgroundColor: formData.get("backgroundColor"),
-    foregroundColor: formData.get("foregroundColor"),
-    stampIcon: formData.get("stampIcon") || undefined,
-    pattern: formData.get("pattern") || undefined,
-      cardStyle: formData.get("cardStyle") || undefined,
-    stampStyle: formData.get("stampStyle") || undefined,
+    backgroundColor: formString(formData, "backgroundColor"),
+    foregroundColor: formString(formData, "foregroundColor"),
+    stampIcon: optionalFormString(formData, "stampIcon"),
+    pattern: optionalFormString(formData, "pattern"),
+    cardStyle: optionalFormString(formData, "cardStyle"),
+    stampStyle: optionalFormString(formData, "stampStyle"),
   });
 
   if (!parsed.success) {

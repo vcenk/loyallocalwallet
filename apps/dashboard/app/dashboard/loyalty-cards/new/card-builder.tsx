@@ -159,6 +159,11 @@ export function CardBuilder({
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">
           <form action={createProgram} className="space-y-6">
+            <input type="hidden" name="name" value={name} />
+            <input type="hidden" name="rewardModel" value={programType} />
+            <input type="hidden" name="stampsRequired" value={stamps} />
+            <input type="hidden" name="rewardTitle" value={reward} />
+            <input type="hidden" name="rewardDescription" value={rewardDetails} />
             <input type="hidden" name="backgroundColor" value={bg} />
             <input type="hidden" name="foregroundColor" value={fg} />
             <input type="hidden" name="stampIcon" value={icon} />
