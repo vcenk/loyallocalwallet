@@ -20,8 +20,8 @@ export default async function NewProgramPage({
   return (
     <div>
       <PageHeader
-        title="Create a loyalty campaign"
-        description="Design your wallet card, set the reward, and launch it with QR codes and customer automations."
+        title="Create a loyalty card"
+        description="Choose a proven reward, style the wallet card, then create a draft with QR and launch tools ready."
         action={
           <Button asChild variant="outline">
             <Link href="/dashboard/loyalty-cards">Cancel</Link>
