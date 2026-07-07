@@ -114,7 +114,7 @@ export function CardBuilder({
   logoUrl?: string | null;
 }) {
   const [step, setStep] = useState(0);
-  const [templateKey, setTemplateKey] = useState("coffee");
+  const [templateKey, setTemplateKey] = useState("cafe");
   const [name, setName] = useState("Coffee Rewards");
   const [description] = useState("Earn a free coffee after 9 visits.");
   const [stamps, setStamps] = useState("9");
@@ -123,7 +123,7 @@ export function CardBuilder({
   const [bg, setBg] = useState("#4b2e2b");
   const [fg, setFg] = useState("#ffffff");
   const [icon, setIcon] = useState("coffee");
-  const [pattern, setPattern] = useState("dots");
+  const [pattern, setPattern] = useState("waves");
   const [cardStyle, setCardStyle] = useState("retail");
   const [stampStyle, setStampStyle] = useState("circles");
   const [programType, setProgramType] = useState("stamps");
@@ -131,7 +131,7 @@ export function CardBuilder({
   const model = rewardModel(programType);
   const template = TEMPLATES.find((t) => t.key === templateKey) ?? TEMPLATES[0];
   const requiredNum = Math.max(1, Number(stamps) || 9);
-  const previewFilled = Math.round(requiredNum * 0.6);
+  const previewFilled = Math.min(1, requiredNum);
   const canContinue =
     name.trim().length > 1 && reward.trim().length > 1 && requiredNum > 0;
 

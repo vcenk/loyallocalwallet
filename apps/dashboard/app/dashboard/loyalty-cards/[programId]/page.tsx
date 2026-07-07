@@ -295,7 +295,7 @@ export default async function EditProgramPage({
               programName={program.name}
               rewardTitle={program.reward_title}
               stampsRequired={stampsRequired}
-              currentStamps={Math.ceil(stampsRequired / 2)}
+              currentStamps={Math.min(1, stampsRequired)}
               backgroundColor={bg}
               foregroundColor={fg}
               stampIcon={stampIcon}

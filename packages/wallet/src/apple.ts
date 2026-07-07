@@ -1,8 +1,7 @@
 import { appleConfig, loadCert } from "./env";
 import type { WalletCardData } from "./types";
-import { renderStripImages } from "./strip";
 
-// Fetches the shop logo once (used for the native logo slot + the strip badge).
+// Fetches the shop logo once for the native logo slot.
 async function fetchLogo(url: string | null | undefined): Promise<Buffer | null> {
   if (!url) return null;
   try {
@@ -89,33 +88,24 @@ export async function generateApplePkpass(
   // Compact progress in the header (top-right).
   pass.headerFields.push({ key: "count", label: "", value: `${filled}/${total}` });
 
-  // Real logo + a visual stamp strip. All best-effort — a failure here must not
-  // break pass generation, so the text fallback below still shows progress.
-  let stripAdded = false;
+  // Real logo. Stamp progress stays in native Apple fields so the dashboard
+  // preview matches the customer Wallet pass.
   try {
     const logoBuf = await fetchLogo(data.logoUrl);
     if (logoBuf) await embedLogo(pass, logoBuf);
-    const strips = await renderStripImages(data, logoBuf);
-    if (strips) {
-      for (const [name, buf] of Object.entries(strips)) pass.addBuffer(name, buf);
-      stripAdded = true;
-    }
   } catch (err) {
     console.error("pass enhancement failed", err);
   }
 
-  // storeCard fields. When the stamp strip rendered, skip the big numeric primary
-  // (the strip is the hero); otherwise show stamps as filled/empty marks.
-  if (!stripAdded) {
-    pass.primaryFields.push({
-      key: "progress",
-      label: "STAMPS",
-      value:
-        total <= 12
-          ? "●".repeat(filled) + "○".repeat(total - filled)
-          : `${filled} / ${total}`,
-    });
-  }
+  // Native storeCard fields, matching the visible customer pass layout.
+  pass.primaryFields.push({
+    key: "progress",
+    label: "STAMPS",
+    value:
+      total <= 12
+        ? "●".repeat(filled) + "○".repeat(total - filled)
+        : `${filled} / ${total}`,
+  });
   pass.secondaryFields.push({
     key: "reward",
     label: "REWARD",

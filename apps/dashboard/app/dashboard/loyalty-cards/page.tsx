@@ -79,7 +79,7 @@ export default async function LoyaltyCardsPage() {
                   programName={p.name}
                   rewardTitle={p.reward_title}
                   stampsRequired={required}
-                  currentStamps={Math.ceil(required * 0.6)}
+                  currentStamps={Math.min(1, required)}
                   backgroundColor={d?.background_color ?? "#ae3115"}
                   foregroundColor={d?.foreground_color ?? "#ffffff"}
                   stampIcon={d?.stamp_icon ?? "star"}

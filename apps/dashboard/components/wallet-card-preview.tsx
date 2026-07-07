@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { rewardModel, formatProgressText } from "@llw/config";
+import { rewardModel } from "@llw/config";
 import {
   Star,
   Coffee,
@@ -168,7 +168,6 @@ export function WalletCardPreview({
   programType = "stamps",
   logoUrl,
 }: WalletCardPreviewProps) {
-  const Icon = STAMP_ICONS[stampIcon] ?? Star;
   const model = rewardModel(programType);
   // Points/spend counts can be large → always a progress bar. Stamps/visits
   // render individual marks (capped at 12) unless "progress" style is chosen.
@@ -178,17 +177,10 @@ export function WalletCardPreview({
   const total = Math.min(requiredRaw, 12);
   const filled = Math.min(filledRaw, total);
   const frac = Math.min(1, filledRaw / requiredRaw);
-  const overlay = patternStyle(pattern, foregroundColor);
-  const marksPerRow = total > 6 ? 6 : total;
+  const marksPerRow = total > 10 ? 10 : total;
   const displayName = businessName || "Your business";
   const displayProgram = programName || "Loyalty card";
   const displayReward = rewardTitle || "Your reward";
-
-  const progressLabel = formatProgressText(
-    programType,
-    Math.min(filledRaw, requiredRaw),
-    requiredRaw,
-  );
 
   return (
     <div
@@ -203,9 +195,6 @@ export function WalletCardPreview({
     >
       <div className="relative">
         <div className="relative overflow-hidden px-5 pb-4 pt-4">
-          {overlay ? (
-            <div aria-hidden className="pointer-events-none absolute inset-0" style={overlay} />
-          ) : null}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 h-14"
@@ -252,7 +241,9 @@ export function WalletCardPreview({
                   style={{ width: `${frac * 100}%`, backgroundColor: foregroundColor }}
                 />
               </div>
-              <p className="mt-2 text-sm font-medium opacity-85">{progressLabel}</p>
+              <p className="mt-2 text-sm font-medium uppercase opacity-85">
+                {model.unit}
+              </p>
             </div>
           ) : (
             <div className="relative mt-5">
@@ -266,29 +257,26 @@ export function WalletCardPreview({
                   return (
                     <span
                       key={i}
-                      className={`flex aspect-square items-center justify-center border-2 transition-colors ${
+                      className={`aspect-square border-[3px] transition-colors ${
                         pill ? "rounded-xl" : "rounded-full"
                       }`}
                       style={{
                         borderColor: foregroundColor,
                         backgroundColor: on ? foregroundColor : "transparent",
-                        opacity: on ? 1 : 0.62,
+                        opacity: 1,
                       }}
-                    >
-                      <Icon
-                        className="h-4 w-4"
-                        style={{ color: on ? backgroundColor : foregroundColor }}
-                      />
-                    </span>
+                    />
                   );
                 })}
               </div>
-              <p className="mt-3 text-sm font-medium opacity-85">{progressLabel}</p>
+              <p className="mt-4 text-xl font-light uppercase opacity-90">
+                Stamps
+              </p>
             </div>
           )}
         </div>
 
-        <div className="space-y-7 px-6 pb-6 pt-5">
+        <div className="space-y-20 px-6 pb-6 pt-16">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[11px] font-bold opacity-70">REWARD</p>
