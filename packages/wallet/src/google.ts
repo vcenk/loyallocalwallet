@@ -14,6 +14,23 @@ function suffix(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+function shortText(value: string | null | undefined, fallback: string, max = 60) {
+  const text = String(value || fallback).trim();
+  return text.length > max ? `${text.slice(0, max - 1)}...` : text;
+}
+
+function googleImage(uri: string, description: string) {
+  return {
+    sourceUri: { uri },
+    contentDescription: {
+      defaultValue: {
+        language: "en-US",
+        value: description,
+      },
+    },
+  };
+}
+
 export function classIdFor(programId: string) {
   return `${googleConfig().issuerId}.program_${suffix(programId)}`;
 }
@@ -23,19 +40,30 @@ export function objectIdFor(serialNumber: string) {
 }
 
 function buildLoyaltyClass(data: WalletCardData) {
+  const logoUri = data.logoUrl || DEFAULT_LOGO_URI;
   return {
     id: classIdFor(data.programId),
     issuerName: data.businessName || "Loyalty",
-    programName: data.programName,
+    programName: shortText(data.programName, "Rewards", 40),
     reviewStatus: "UNDER_REVIEW",
     hexBackgroundColor: data.backgroundColor,
-    programLogo: {
-      sourceUri: { uri: data.logoUrl || DEFAULT_LOGO_URI },
-    },
+    programLogo: googleImage(logoUri, `${data.businessName || "Business"} logo`),
+    wideProgramLogo: googleImage(logoUri, `${data.businessName || "Business"} logo`),
+    heroImage: data.logoUrl
+      ? googleImage(data.logoUrl, `${data.programName || "Loyalty card"} artwork`)
+      : undefined,
   };
 }
 
 function buildLoyaltyObject(data: WalletCardData) {
+  const total = Math.max(1, Math.round(data.stampsRequired || 1));
+  const filled = Math.max(0, Math.min(Math.round(data.currentStamps || 0), total));
+  const remaining = Math.max(0, total - filled);
+  const rewardReady = data.rewardsAvailable > 0 || filled >= total;
+  const progressBody = rewardReady
+    ? "Reward ready to redeem"
+    : `${filled} of ${total} stamps - ${remaining} to go`;
+
   return {
     id: objectIdFor(data.serialNumber),
     classId: classIdFor(data.programId),
@@ -44,15 +72,27 @@ function buildLoyaltyObject(data: WalletCardData) {
     accountId: data.serialNumber,
     loyaltyPoints: {
       label: "Stamps",
-      balance: { int: data.currentStamps },
+      balance: { int: filled },
     },
-    barcode: { type: "QR_CODE", value: data.serialNumber },
+    barcode: {
+      type: "QR_CODE",
+      value: data.serialNumber,
+      alternateText: shortText(data.businessName, data.serialNumber, 24),
+    },
+    heroImage: data.logoUrl
+      ? googleImage(data.logoUrl, `${data.businessName || "Business"} artwork`)
+      : undefined,
     textModulesData: [
-      { id: "reward", header: "Reward", body: data.rewardTitle },
+      {
+        id: "program",
+        header: data.businessName || "Member card",
+        body: shortText(data.programName, "Rewards", 60),
+      },
+      { id: "reward", header: "Reward", body: shortText(data.rewardTitle, "Reward", 80) },
       {
         id: "progress",
         header: "Progress",
-        body: `${data.currentStamps} of ${data.stampsRequired} stamps`,
+        body: progressBody,
       },
     ],
   };
@@ -120,14 +160,30 @@ export async function patchGoogleObject(data: WalletCardData): Promise<boolean> 
     body: JSON.stringify({
       loyaltyPoints: {
         label: "Stamps",
-        balance: { int: data.currentStamps },
+        balance: {
+          int: Math.max(
+            0,
+            Math.min(
+              Math.round(data.currentStamps || 0),
+              Math.max(1, Math.round(data.stampsRequired || 1)),
+            ),
+          ),
+        },
       },
       textModulesData: [
-        { id: "reward", header: "Reward", body: data.rewardTitle },
+        {
+          id: "program",
+          header: data.businessName || "Member card",
+          body: shortText(data.programName, "Rewards", 60),
+        },
+        { id: "reward", header: "Reward", body: shortText(data.rewardTitle, "Reward", 80) },
         {
           id: "progress",
           header: "Progress",
-          body: `${data.currentStamps} of ${data.stampsRequired} stamps`,
+          body:
+            data.rewardsAvailable > 0
+              ? "Reward ready to redeem"
+              : `${Math.max(0, Math.round(data.currentStamps || 0))} of ${Math.max(1, Math.round(data.stampsRequired || 1))} stamps`,
         },
       ],
     }),

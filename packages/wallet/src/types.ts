@@ -13,6 +13,7 @@ export interface WalletCardData {
   backgroundColor: string; // hex, e.g. #ae3115
   foregroundColor: string; // hex, e.g. #ffffff
   logoUrl?: string | null;
+  designLogoUrl?: string | null;
   // The owner's design choices — carried onto the real wallet pass so the
   // customer sees the card they designed (not a generic one).
   stampIcon?: string | null;

@@ -52,6 +52,18 @@ function patternDef(key: string, fg: string, s: number): string {
   }
 }
 
+function xmlText(value: string | null | undefined): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function trimText(value: string | null | undefined, max = 28): string {
+  const s = String(value ?? "").trim();
+  return s.length > max ? `${s.slice(0, max - 1)}...` : s;
+}
+
 // The Apple pass "strip" banner reflecting the owner's design: brand colors,
 // their pattern watermark, and their stamp icon + style. `hasLogo` reserves
 // room on the left for a logo badge composited in renderStripImages.
@@ -65,6 +77,9 @@ function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string
   const patternKey = data.pattern || "none";
   const total = Math.max(1, Math.round(data.stampsRequired || 1));
   const filled = Math.max(0, Math.min(Math.round(data.currentStamps || 0), total));
+  const businessName = xmlText(trimText(data.businessName || "Loyalty", 24));
+  const programName = xmlText(trimText(data.programName || "Rewards", 30));
+  const rewardTitle = xmlText(trimText(data.rewardTitle || "Reward", 28));
 
   const pdef = patternKey !== "none" ? patternDef(patternKey, fg, scale) : "";
   const defs = pdef ? `<defs>${pdef}</defs>` : "";
@@ -72,16 +87,18 @@ function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string
     ? `<rect width="${W}" height="${H}" fill="url(#pat)" opacity="0.18"/>`
     : "";
 
-  const left = hasLogo ? 108 * scale : 24 * scale;
+  const left = hasLogo ? 104 * scale : 22 * scale;
   const right = 24 * scale;
   const areaX = left;
   const areaW = W - left - right;
+  const contentTop = 52 * scale;
+  const contentH = H - contentTop - 14 * scale;
 
   let marks = "";
   const useBar = style === "progress" || total > 12;
   if (useBar) {
-    const barH = 18 * scale;
-    const y = (H - barH) / 2;
+    const barH = 13 * scale;
+    const y = contentTop + contentH - barH - 2 * scale;
     const frac = Math.min(1, filled / total);
     marks =
       `<rect x="${areaX}" y="${y}" width="${areaW}" height="${barH}" rx="${barH / 2}" fill="${fg}" fill-opacity="0.22"/>` +
@@ -89,10 +106,8 @@ function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string
   } else {
     const rows = total > 6 ? 2 : 1;
     const cols = Math.ceil(total / rows);
-    const areaTop = 16 * scale;
-    const areaH = H - 32 * scale;
     const cellW = areaW / cols;
-    const cellH = areaH / rows;
+    const cellH = contentH / rows;
     const r = Math.min(cellW, cellH) * 0.34;
     const pill = style === "pills";
     const sw = (2.4 * scale).toFixed(1);
@@ -100,7 +115,7 @@ function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string
       const row = Math.floor(i / cols);
       const col = i % cols;
       const cx = areaX + cellW * (col + 0.5);
-      const cy = areaTop + cellH * (row + 0.5);
+      const cy = contentTop + cellH * (row + 0.5);
       const on = i < filled;
       if (pill) {
         const pw = Math.min(cellW * 0.82, r * 2.6);
@@ -113,7 +128,13 @@ function stripSvg(data: WalletCardData, scale: number, hasLogo: boolean): string
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${defs}<rect width="${W}" height="${H}" fill="${bg}"/>${patternRect}${marks}</svg>`;
+  const headerX = left;
+  const badgeW = 62 * scale;
+  const badgeH = 27 * scale;
+  const badgeX = W - right - badgeW;
+  const badgeY = 14 * scale;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${defs}<rect width="${W}" height="${H}" fill="${bg}"/><rect width="${W}" height="${46 * scale}" fill="#000" fill-opacity="0.13"/>${patternRect}<text x="${headerX}" y="${22 * scale}" fill="${fg}" font-family="Arial, Helvetica, sans-serif" font-size="${11 * scale}" font-weight="700" letter-spacing="${1.4 * scale}" opacity="0.78">${businessName}</text><text x="${headerX}" y="${42 * scale}" fill="${fg}" font-family="Arial, Helvetica, sans-serif" font-size="${20 * scale}" font-weight="700">${programName}</text><rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="${13.5 * scale}" fill="${fg}" fill-opacity="0.17"/><text x="${badgeX + badgeW / 2}" y="${badgeY + 18.5 * scale}" text-anchor="middle" fill="${fg}" font-family="Arial, Helvetica, sans-serif" font-size="${13 * scale}" font-weight="700">${filled}/${total}</text><text x="${areaX}" y="${H - 7 * scale}" fill="${fg}" font-family="Arial, Helvetica, sans-serif" font-size="${9 * scale}" font-weight="700" letter-spacing="${1 * scale}" opacity="0.82">REWARD: ${rewardTitle}</text>${marks}</svg>`;
 }
 
 // Renders strip.png at 1x/2x/3x, compositing the shop logo (circular badge) on
@@ -130,7 +151,7 @@ export async function renderStripImages(
         .toBuffer();
       if (logoBuf) {
         try {
-          const d = Math.round(80 * s);
+          const d = Math.round(74 * s);
           const mask = Buffer.from(
             `<svg width="${d}" height="${d}"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2}" fill="#fff"/></svg>`,
           );
@@ -143,7 +164,7 @@ export async function renderStripImages(
             .composite([
               {
                 input: logoImg,
-                top: Math.round((123 * s - d) / 2),
+                top: Math.round(24 * s),
                 left: Math.round(16 * s),
               },
             ])

@@ -112,6 +112,8 @@ export default async function CustomerDetailPage({
   let fg = "#ffffff";
   let stampIcon = "star";
   let pattern = "none";
+  let cardStyle = "retail";
+  let stampStyle = "circles";
   let programType = "stamps";
 
   if (pass) {
@@ -137,6 +139,8 @@ export default async function CustomerDetailPage({
       fg = design.foreground_color ?? fg;
       stampIcon = design.stamp_icon ?? stampIcon;
       pattern = design.pattern ?? pattern;
+      cardStyle = design.card_style ?? cardStyle;
+      stampStyle = design.stamp_style ?? stampStyle;
     }
   }
 
@@ -346,6 +350,8 @@ export default async function CustomerDetailPage({
               foregroundColor={fg}
               stampIcon={stampIcon}
               pattern={pattern}
+              cardStyle={cardStyle}
+              stampStyle={stampStyle}
               programType={programType}
               logoUrl={business?.logo_url}
             />

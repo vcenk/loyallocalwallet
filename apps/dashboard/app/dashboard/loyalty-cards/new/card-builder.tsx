@@ -118,7 +118,7 @@ export function CardBuilder({
   const [fg, setFg] = useState("#ffffff");
   const [icon, setIcon] = useState("coffee");
   const [pattern, setPattern] = useState("dots");
-  const [cardStyle, setCardStyle] = useState("modern");
+  const [cardStyle, setCardStyle] = useState("retail");
   const [stampStyle, setStampStyle] = useState("circles");
   const [programType, setProgramType] = useState("stamps");
   const [tab, setTab] = useState("Wallet card");

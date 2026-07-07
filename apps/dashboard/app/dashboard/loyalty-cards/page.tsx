@@ -84,7 +84,7 @@ export default async function LoyaltyCardsPage() {
                   foregroundColor={d?.foreground_color ?? "#ffffff"}
                   stampIcon={d?.stamp_icon ?? "star"}
                   pattern={d?.pattern ?? "none"}
-                  cardStyle={d?.card_style ?? "modern"}
+                  cardStyle={d?.card_style ?? "retail"}
                   stampStyle={d?.stamp_style ?? "circles"}
                   programType={p.program_type}
                   logoUrl={business?.logo_url}

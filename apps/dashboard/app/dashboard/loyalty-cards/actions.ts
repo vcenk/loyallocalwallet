@@ -81,7 +81,7 @@ export async function createProgram(formData: FormData) {
   const fg = String(formData.get("foregroundColor") ?? "");
   const icon = String(formData.get("stampIcon") ?? "").slice(0, 24);
   const pattern = String(formData.get("pattern") ?? "none").slice(0, 24);
-  const cardStyle = String(formData.get("cardStyle") ?? "modern").slice(0, 24);
+  const cardStyle = String(formData.get("cardStyle") ?? "retail").slice(0, 24);
   const stampStyle = String(formData.get("stampStyle") ?? "circles").slice(0, 24);
   await supabase.from("card_designs").insert({
     business_id: m.businessId,
@@ -90,7 +90,7 @@ export async function createProgram(formData: FormData) {
     foreground_color: hex.test(fg) ? fg : "#ffffff",
     stamp_icon: icon || "star",
     pattern: pattern || "none",
-    card_style: cardStyle || "modern",
+    card_style: cardStyle || "retail",
     stamp_style: stampStyle || "circles",
   });
 
@@ -146,7 +146,7 @@ export async function updateDesign(formData: FormData) {
     foregroundColor: formData.get("foregroundColor"),
     stampIcon: formData.get("stampIcon") || undefined,
     pattern: formData.get("pattern") || undefined,
-    cardStyle: formData.get("cardStyle") || undefined,
+      cardStyle: formData.get("cardStyle") || undefined,
     stampStyle: formData.get("stampStyle") || undefined,
   });
 
@@ -167,7 +167,7 @@ export async function updateDesign(formData: FormData) {
       foreground_color: parsed.data.foregroundColor,
       stamp_icon: parsed.data.stampIcon ?? "star",
       pattern: parsed.data.pattern ?? "none",
-      card_style: parsed.data.cardStyle ?? "modern",
+      card_style: parsed.data.cardStyle ?? "retail",
       stamp_style: parsed.data.stampStyle ?? "circles",
     })
     .eq("program_id", programId)

@@ -50,7 +50,7 @@ async function buildFromPass(
         .maybeSingle(),
       admin
         .from("card_designs")
-        .select("background_color, foreground_color, stamp_icon, pattern, stamp_style")
+        .select("background_color, foreground_color, logo_url, stamp_icon, pattern, stamp_style")
         .eq("program_id", pass.program_id)
         .maybeSingle(),
     ]);
@@ -69,7 +69,8 @@ async function buildFromPass(
     customerName: `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim(),
     backgroundColor: design?.background_color ?? "#ae3115",
     foregroundColor: design?.foreground_color ?? "#ffffff",
-    logoUrl: business?.logo_url ?? null,
+    logoUrl: design?.logo_url ?? business?.logo_url ?? null,
+    designLogoUrl: design?.logo_url ?? null,
     stampIcon: design?.stamp_icon ?? "star",
     pattern: design?.pattern ?? "none",
     stampStyle: design?.stamp_style ?? "circles",

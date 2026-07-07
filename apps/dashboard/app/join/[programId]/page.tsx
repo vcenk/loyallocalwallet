@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Apple, Smartphone } from "lucide-react";
-import { CardPreview } from "@llw/ui";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { WalletCardPreview } from "@/components/wallet-card-preview";
 import { enroll } from "./actions";
 
 const INPUT_CLASS =
@@ -29,12 +29,12 @@ export default async function JoinPage({
   const [{ data: business }, { data: design }] = await Promise.all([
     supabase
       .from("businesses")
-      .select("name")
+      .select("name, logo_url")
       .eq("id", program.business_id)
       .maybeSingle(),
     supabase
       .from("card_designs")
-      .select("background_color, foreground_color")
+      .select("background_color, foreground_color, stamp_icon, pattern, card_style, stamp_style")
       .eq("program_id", programId)
       .maybeSingle(),
   ]);
@@ -73,7 +73,7 @@ export default async function JoinPage({
       </div>
 
       <div className="flex justify-center">
-        <CardPreview
+        <WalletCardPreview
           businessName={businessName}
           programName={program.name}
           rewardTitle={program.reward_title}
@@ -81,6 +81,12 @@ export default async function JoinPage({
           currentStamps={0}
           backgroundColor={design?.background_color ?? "#ae3115"}
           foregroundColor={design?.foreground_color ?? "#ffffff"}
+          stampIcon={design?.stamp_icon ?? "star"}
+          pattern={design?.pattern ?? "none"}
+          cardStyle={design?.card_style ?? "retail"}
+          stampStyle={design?.stamp_style ?? "circles"}
+          programType={program.program_type}
+          logoUrl={business?.logo_url}
         />
       </div>
 

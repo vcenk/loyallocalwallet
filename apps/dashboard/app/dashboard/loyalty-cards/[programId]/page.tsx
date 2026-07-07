@@ -61,7 +61,7 @@ export default async function EditProgramPage({
   const fg = design?.foreground_color ?? "#ffffff";
   const stampIcon = design?.stamp_icon ?? "star";
   const cardPattern = design?.pattern ?? "none";
-  const cardStyle = design?.card_style ?? "modern";
+  const cardStyle = design?.card_style ?? "retail";
   const stampStyle = design?.stamp_style ?? "circles";
   const stampsRequired = program.stamps_required ?? 10;
 

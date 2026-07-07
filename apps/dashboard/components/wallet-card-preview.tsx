@@ -88,6 +88,7 @@ export const CARD_STYLE_KEYS = [
   "playful",
   "minimal",
   "premium",
+  "retail",
 ];
 export const STAMP_STYLE_KEYS = ["circles", "pills", "progress"];
 
@@ -101,6 +102,7 @@ const CARD_STYLES: Record<
   playful: { radius: "2.4rem", shadow: "0 18px 40px rgba(38,24,21,0.30)", sheen: true, ring: "none" },
   minimal: { radius: "0.9rem", shadow: "0 6px 16px rgba(38,24,21,0.14)", sheen: false, ring: "none" },
   premium: { radius: "1.5rem", shadow: "0 26px 60px rgba(38,24,21,0.45)", sheen: true, ring: "inset 0 0 0 1.5px rgba(255,255,255,0.28)" },
+  retail: { radius: "1.05rem", shadow: "0 20px 46px rgba(38,24,21,0.34)", sheen: false, ring: "inset 0 0 0 1px rgba(255,255,255,0.22)" },
 };
 
 export interface WalletCardPreviewProps {
@@ -130,7 +132,7 @@ export function WalletCardPreview({
   foregroundColor = "#ffffff",
   stampIcon = "star",
   pattern = "none",
-  cardStyle = "modern",
+  cardStyle = "retail",
   stampStyle = "circles",
   programType = "stamps",
   logoUrl,
@@ -148,9 +150,15 @@ export function WalletCardPreview({
   const overlay = patternStyle(pattern, foregroundColor);
   const shell = CARD_STYLES[cardStyle] ?? CARD_STYLES.modern;
 
+  const progressLabel = formatProgressText(
+    programType,
+    Math.min(filledRaw, requiredRaw),
+    requiredRaw,
+  );
+
   return (
     <div
-      className="relative w-full max-w-sm overflow-hidden p-6"
+      className="relative w-full max-w-sm overflow-hidden"
       style={{
         backgroundColor,
         color: foregroundColor,
@@ -173,90 +181,112 @@ export function WalletCardPreview({
       ) : null}
 
       <div className="relative z-10">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-85">
-            {businessName || "Your business"}
-          </span>
+        <div
+          className="flex min-h-24 items-center gap-4 px-5 py-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.12)" }}
+        >
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
               alt=""
-              className="h-9 w-9 rounded-full object-cover ring-2 ring-white/40"
+              className="h-14 w-14 flex-none rounded-xl bg-white object-cover p-1 shadow-sm"
             />
           ) : (
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+              className="flex h-14 w-14 flex-none items-center justify-center rounded-xl text-xl font-bold shadow-sm"
               style={{ backgroundColor: foregroundColor, color: backgroundColor }}
             >
               {(businessName || "B").charAt(0).toUpperCase()}
             </span>
           )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold opacity-80">
+              {businessName || "Your business"}
+            </p>
+            <p className="truncate font-display text-2xl font-bold leading-tight">
+              {programName || "Loyalty card"}
+            </p>
+          </div>
+          <span
+            className="flex-none rounded-full px-3 py-1 text-sm font-bold"
+            style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
+          >
+            {Math.min(filledRaw, requiredRaw)}/{requiredRaw}
+          </span>
         </div>
 
-        <p className="mt-5 font-display text-2xl font-bold leading-tight">
-          {programName || "Loyalty card"}
-        </p>
-
-        {useBar ? (
-          <div className="mt-5">
-            <div
-              className="h-3.5 w-full overflow-hidden rounded-full"
-              style={{ backgroundColor: `${foregroundColor}2e` }}
-            >
+        <div className="space-y-6 px-6 pb-6 pt-5">
+          {useBar ? (
+            <div>
               <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${frac * 100}%`, backgroundColor: foregroundColor }}
+                className="h-4 w-full overflow-hidden rounded-full"
+                style={{ backgroundColor: `${foregroundColor}2e` }}
+              >
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${frac * 100}%`, backgroundColor: foregroundColor }}
+                />
+              </div>
+              <p className="mt-2 text-sm font-medium opacity-85">{progressLabel}</p>
+            </div>
+          ) : (
+            <div>
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(total, 6)}, minmax(0, 1fr))` }}>
+                {Array.from({ length: total }).map((_, i) => {
+                  const on = i < filled;
+                  const pill = stampStyle === "pills";
+                  return (
+                    <span
+                      key={i}
+                      className={`flex aspect-square items-center justify-center border transition-colors ${
+                        pill ? "rounded-xl" : "rounded-full"
+                      }`}
+                      style={{
+                        borderColor: foregroundColor,
+                        backgroundColor: on ? foregroundColor : "transparent",
+                        opacity: on ? 1 : 0.62,
+                      }}
+                    >
+                      <Icon
+                        className="h-4 w-4"
+                        style={{ color: on ? backgroundColor : foregroundColor }}
+                      />
+                    </span>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-sm font-medium opacity-85">{progressLabel}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[11px] font-bold opacity-70">REWARD</p>
+              <p className="mt-1 line-clamp-2 text-xl leading-tight">
+                {rewardTitle || "Your reward"}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] font-bold opacity-70">MEMBER</p>
+              <p className="mt-1 text-xl leading-tight">Member</p>
+            </div>
+          </div>
+
+          <div className="flex justify-center pt-2">
+            <div className="rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
+              <div
+                aria-hidden
+                className="h-28 w-28"
+                style={{
+                  background:
+                    "linear-gradient(90deg,#000 10px,transparent 10px 18px,#000 18px 24px,transparent 24px 32px,#000 32px 38px,transparent 38px),linear-gradient(#000 8px,transparent 8px 16px,#000 16px 22px,transparent 22px 30px,#000 30px 36px,transparent 36px)",
+                  backgroundSize: "38px 38px",
+                }}
               />
             </div>
           </div>
-        ) : (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {Array.from({ length: total }).map((_, i) => {
-              const on = i < filled;
-              const pill = stampStyle === "pills";
-              return (
-                <span
-                  key={i}
-                  className={`flex items-center justify-center border transition-colors ${
-                    pill ? "h-7 min-w-[2.5rem] rounded-full px-2" : "h-7 w-7 rounded-full"
-                  }`}
-                  style={{
-                    borderColor: foregroundColor,
-                    backgroundColor: on ? foregroundColor : "transparent",
-                    opacity: on ? 1 : 0.55,
-                  }}
-                >
-                  <Icon
-                    className="h-3.5 w-3.5"
-                    style={{ color: on ? backgroundColor : foregroundColor }}
-                  />
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="mt-5 flex items-center justify-between text-sm">
-          <span className="opacity-85">
-            {formatProgressText(programType, Math.min(filledRaw, requiredRaw), requiredRaw)}
-          </span>
-          <span
-            className="rounded-full px-3 py-1 text-xs font-semibold"
-            style={{ backgroundColor: "rgba(255,255,255,0.16)" }}
-          >
-            {rewardTitle || "Your reward"}
-          </span>
         </div>
-
-        {/* faux barcode strip */}
-        <div
-          className="mt-5 h-9 w-full rounded-lg"
-          style={{
-            background: `repeating-linear-gradient(90deg, ${foregroundColor} 0 2px, transparent 2px 5px)`,
-            opacity: 0.85,
-          }}
-        />
       </div>
     </div>
   );
