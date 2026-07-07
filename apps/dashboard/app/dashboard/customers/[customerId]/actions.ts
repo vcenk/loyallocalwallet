@@ -60,6 +60,42 @@ export async function addStamp(formData: FormData) {
   back(customerId, "saved=1");
 }
 
+const CAN_MANAGE_CONSENT = ["business_owner", "business_admin"];
+
+export async function setMarketingConsent(formData: FormData) {
+  const customerId = String(formData.get("customerId") ?? "");
+  const optIn = formData.get("optIn") === "true";
+  if (!customerId) back(customerId, `error=${encodeURIComponent("Missing customer.")}`);
+
+  const supabase = await createClient();
+  const membership = await getActiveMembership(supabase);
+  if (!membership) redirect("/login");
+  if (!CAN_MANAGE_CONSENT.includes(membership.role)) {
+    back(customerId, `error=${encodeURIComponent("Only owners and admins can change consent.")}`);
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("customers")
+    .update({ marketing_consent: optIn })
+    .eq("id", customerId)
+    .eq("business_id", membership.businessId);
+  if (error) back(customerId, `error=${encodeURIComponent(error.message)}`);
+
+  await admin.from("audit_logs").insert({
+    business_id: membership.businessId,
+    actor_user_id: membership.userId,
+    actor_staff_member_id: membership.staffMemberId,
+    action: optIn ? "consent_opted_in" : "consent_opted_out",
+    entity_type: "customer",
+    entity_id: customerId,
+    metadata: {},
+  });
+
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  back(customerId, "consent=1");
+}
+
 export async function redeemReward(formData: FormData) {
   const passId = String(formData.get("passId") ?? "");
   const customerId = String(formData.get("customerId") ?? "");

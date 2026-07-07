@@ -16,8 +16,9 @@ import {
   formatUnits,
 } from "@llw/config";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveMembership } from "@/lib/business";
 import { WalletCardPreview } from "@/components/wallet-card-preview";
-import { addStamp, redeemReward } from "./actions";
+import { addStamp, redeemReward, setMarketingConsent } from "./actions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-xl border border-input bg-card px-3 py-2 text-sm text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -76,12 +77,22 @@ export default async function CustomerDetailPage({
   searchParams,
 }: {
   params: Promise<{ customerId: string }>;
-  searchParams: Promise<{ error?: string; saved?: string; redeemed?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    saved?: string;
+    redeemed?: string;
+    consent?: string;
+  }>;
 }) {
   const { customerId } = await params;
-  const { error, saved, redeemed } = await searchParams;
+  const { error, saved, redeemed, consent } = await searchParams;
 
   const supabase = await createClient();
+  const membership = await getActiveMembership(supabase);
+  const canManageConsent =
+    membership?.role === "business_owner" ||
+    membership?.role === "business_admin";
+
   const { data: customer } = await supabase
     .from("customers")
     .select("*")
@@ -181,15 +192,36 @@ export default async function CustomerDetailPage({
         }
       />
 
-      <p className="mb-6 flex items-center gap-2 text-xs text-muted-foreground">
-        <Calendar className="h-3.5 w-3.5" />
-        Joined {dateFmt.format(new Date(customer.first_seen_at))}
-        {customer.marketing_consent ? " · opted in to offers" : ""}
-      </p>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          Joined {dateFmt.format(new Date(customer.first_seen_at))}
+        </p>
+        <span className="text-muted-foreground/50">·</span>
+        <Badge variant={customer.marketing_consent ? "success" : "default"}>
+          {customer.marketing_consent ? "Opted in to offers" : "Not opted in"}
+        </Badge>
+        {canManageConsent ? (
+          <form action={setMarketingConsent}>
+            <input type="hidden" name="customerId" value={customer.id} />
+            <input
+              type="hidden"
+              name="optIn"
+              value={customer.marketing_consent ? "false" : "true"}
+            />
+            <Button type="submit" variant="outline" size="sm">
+              {customer.marketing_consent ? "Opt out" : "Opt in"}
+            </Button>
+          </form>
+        ) : null}
+      </div>
 
       {error ? <Banner tone="red">{error}</Banner> : null}
       {saved ? <Banner tone="green">Stamp added.</Banner> : null}
       {redeemed ? <Banner tone="green">Reward redeemed.</Banner> : null}
+      {consent ? (
+        <Banner tone="green">Marketing preference updated.</Banner>
+      ) : null}
 
       {!pass || !progress ? (
         <Card>
