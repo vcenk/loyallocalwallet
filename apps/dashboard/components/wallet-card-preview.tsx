@@ -135,19 +135,6 @@ export const CARD_STYLE_KEYS = [
 ];
 export const STAMP_STYLE_KEYS = ["circles", "pills", "progress"];
 
-// Per-style visual treatment for the card shell.
-const CARD_STYLES: Record<
-  string,
-  { radius: string; shadow: string; sheen: boolean; ring: string }
-> = {
-  classic: { radius: "1.25rem", shadow: "0 12px 30px rgba(38,24,21,0.25)", sheen: true, ring: "none" },
-  modern: { radius: "1.75rem", shadow: "0 22px 48px rgba(38,24,21,0.35)", sheen: true, ring: "none" },
-  playful: { radius: "2.4rem", shadow: "0 18px 40px rgba(38,24,21,0.30)", sheen: true, ring: "none" },
-  minimal: { radius: "0.9rem", shadow: "0 6px 16px rgba(38,24,21,0.14)", sheen: false, ring: "none" },
-  premium: { radius: "1.5rem", shadow: "0 26px 60px rgba(38,24,21,0.45)", sheen: true, ring: "inset 0 0 0 1.5px rgba(255,255,255,0.28)" },
-  retail: { radius: "1.05rem", shadow: "0 20px 46px rgba(38,24,21,0.34)", sheen: false, ring: "inset 0 0 0 1px rgba(255,255,255,0.22)" },
-};
-
 export interface WalletCardPreviewProps {
   businessName: string;
   programName: string;
@@ -164,7 +151,8 @@ export interface WalletCardPreviewProps {
   logoUrl?: string | null;
 }
 
-// A premium wallet-card mockup used across the card builder and editor.
+// Mirrors the customer-facing Apple Wallet store-card shape used by the pass
+// generator: logo/header, strip-style progress, reward/member fields, barcode.
 export function WalletCardPreview({
   businessName,
   programName,
@@ -191,7 +179,10 @@ export function WalletCardPreview({
   const filled = Math.min(filledRaw, total);
   const frac = Math.min(1, filledRaw / requiredRaw);
   const overlay = patternStyle(pattern, foregroundColor);
-  const shell = CARD_STYLES[cardStyle] ?? CARD_STYLES.modern;
+  const marksPerRow = total > 6 ? 6 : total;
+  const displayName = businessName || "Your business";
+  const displayProgram = programName || "Loyalty card";
+  const displayReward = rewardTitle || "Your reward";
 
   const progressLabel = formatProgressText(
     programType,
@@ -201,67 +192,57 @@ export function WalletCardPreview({
 
   return (
     <div
-      className="relative w-full max-w-sm overflow-hidden"
+      data-card-style={cardStyle}
+      className="relative w-full max-w-sm overflow-hidden rounded-[1.35rem]"
       style={{
         backgroundColor,
         color: foregroundColor,
-        borderRadius: shell.radius,
-        boxShadow: shell.ring === "none" ? shell.shadow : `${shell.shadow}, ${shell.ring}`,
+        boxShadow:
+          "0 22px 50px rgba(38,24,21,0.28), inset 0 0 0 1px rgba(255,255,255,0.22)",
       }}
     >
-      {overlay ? (
-        <div aria-hidden className="pointer-events-none absolute inset-0" style={overlay} />
-      ) : null}
-      {shell.sheen ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.16), transparent 45%)",
-          }}
-        />
-      ) : null}
+      <div className="relative">
+        <div className="relative overflow-hidden px-5 pb-4 pt-4">
+          {overlay ? (
+            <div aria-hidden className="pointer-events-none absolute inset-0" style={overlay} />
+          ) : null}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-14"
+            style={{ backgroundColor: "rgba(0,0,0,0.13)" }}
+          />
 
-      <div className="relative z-10">
-        <div
-          className="flex min-h-24 items-center gap-4 px-5 py-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.12)" }}
-        >
+          <div className="relative flex min-h-12 items-center gap-3">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoUrl}
               alt=""
-              className="h-14 w-14 flex-none rounded-xl bg-white object-cover p-1 shadow-sm"
+              className="h-12 w-20 flex-none rounded-sm bg-white object-contain p-1 shadow-sm"
             />
           ) : (
             <span
-              className="flex h-14 w-14 flex-none items-center justify-center rounded-xl text-xl font-bold shadow-sm"
+              className="flex h-12 w-20 flex-none items-center justify-center rounded-sm text-xl font-bold shadow-sm"
               style={{ backgroundColor: foregroundColor, color: backgroundColor }}
             >
-              {(businessName || "B").charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </span>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold opacity-80">
-              {businessName || "Your business"}
+            <p className="truncate text-sm font-semibold leading-none opacity-85">
+              {displayName}
             </p>
-            <p className="truncate font-display text-2xl font-bold leading-tight">
-              {programName || "Loyalty card"}
+            <p className="mt-1 truncate font-display text-2xl font-bold leading-tight">
+              {displayProgram}
             </p>
           </div>
-          <span
-            className="flex-none rounded-full px-3 py-1 text-sm font-bold"
-            style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
-          >
+          <span className="flex-none text-xl font-semibold">
             {Math.min(filledRaw, requiredRaw)}/{requiredRaw}
           </span>
         </div>
 
-        <div className="space-y-6 px-6 pb-6 pt-5">
           {useBar ? (
-            <div>
+            <div className="relative mt-5">
               <div
                 className="h-4 w-full overflow-hidden rounded-full"
                 style={{ backgroundColor: `${foregroundColor}2e` }}
@@ -274,15 +255,18 @@ export function WalletCardPreview({
               <p className="mt-2 text-sm font-medium opacity-85">{progressLabel}</p>
             </div>
           ) : (
-            <div>
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(total, 6)}, minmax(0, 1fr))` }}>
+            <div className="relative mt-5">
+              <div
+                className="grid gap-2"
+                style={{ gridTemplateColumns: `repeat(${marksPerRow}, minmax(0, 1fr))` }}
+              >
                 {Array.from({ length: total }).map((_, i) => {
                   const on = i < filled;
                   const pill = stampStyle === "pills";
                   return (
                     <span
                       key={i}
-                      className={`flex aspect-square items-center justify-center border transition-colors ${
+                      className={`flex aspect-square items-center justify-center border-2 transition-colors ${
                         pill ? "rounded-xl" : "rounded-full"
                       }`}
                       style={{
@@ -302,12 +286,14 @@ export function WalletCardPreview({
               <p className="mt-3 text-sm font-medium opacity-85">{progressLabel}</p>
             </div>
           )}
+        </div>
 
+        <div className="space-y-7 px-6 pb-6 pt-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[11px] font-bold opacity-70">REWARD</p>
               <p className="mt-1 line-clamp-2 text-xl leading-tight">
-                {rewardTitle || "Your reward"}
+                {displayReward}
               </p>
             </div>
             <div className="text-right">
@@ -317,10 +303,10 @@ export function WalletCardPreview({
           </div>
 
           <div className="flex justify-center pt-2">
-            <div className="rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
+            <div className="rounded-lg bg-white p-3 shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
               <div
                 aria-hidden
-                className="h-28 w-28"
+                className="h-32 w-32"
                 style={{
                   background:
                     "linear-gradient(90deg,#000 10px,transparent 10px 18px,#000 18px 24px,transparent 24px 32px,#000 32px 38px,transparent 38px),linear-gradient(#000 8px,transparent 8px 16px,#000 16px 22px,transparent 22px 30px,#000 30px 36px,transparent 36px)",
