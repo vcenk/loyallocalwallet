@@ -3,11 +3,8 @@
 import { useState } from "react";
 import {
   Coffee,
-  Heart,
   Crown,
   Cake,
-  Ticket,
-  Users,
   Zap,
   Undo2,
   Star,
@@ -15,6 +12,12 @@ import {
   Smartphone,
   ScanLine,
   Printer,
+  Scissors,
+  PawPrint,
+  ShoppingBag,
+  Dumbbell,
+  Car,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Button, Input, Label } from "@llw/ui";
 import { REWARD_MODELS, rewardModel } from "@llw/config";
@@ -56,15 +59,17 @@ type Template = {
   suggestions: string[];
 };
 
-const STEPS = ["Reward", "Design", "Review"] as const;
+const STEPS = ["Business Style", "Reward", "Design", "Review"] as const;
 
 const TEMPLATES: Template[] = [
-  { key: "coffee", icon: Coffee, title: "Coffee Stamp Card", description: "Buy 9, get 1 free.", tag: "Cafes & bakeries", name: "Coffee Rewards", stamps: "9", reward: "Free coffee", details: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", stampIcon: "coffee", pattern: "dots", suggestions: ["Buy 9 coffees, get 1 free", "Free pastry after 5 visits", "Double stamps before 10 AM"] },
-  { key: "visits", icon: Heart, title: "Visit Rewards", description: "Reward customers after repeat visits.", tag: "Salons, barbers, groomers", name: "Visit Rewards", stamps: "6", reward: "$10 off", details: "Any service.", bg: "#be185d", fg: "#ffffff", stampIcon: "heart", pattern: "none", suggestions: ["6 visits, $10 off", "Free add-on after 5 visits", "VIP pricing after 10 visits"] },
-  { key: "vip", icon: Crown, title: "VIP Club", description: "Create Bronze, Silver, Gold levels.", tag: "Premium local shops", name: "VIP Club", stamps: "12", reward: "VIP perk", details: "A members-only treat.", bg: "#1e293b", fg: "#ffffff", stampIcon: "crown", pattern: "vertical", suggestions: ["Gold status after 12 visits", "Members-only offers", "Early access for VIPs"] },
-  { key: "birthday", icon: Cake, title: "Birthday Club", description: "Collect birthdays and send offers.", tag: "Restaurants & beauty", name: "Birthday Club", stamps: "8", reward: "Birthday treat", details: "On us, during your birthday week.", bg: "#b45309", fg: "#ffffff", stampIcon: "cake", pattern: "diagonal", suggestions: ["Free dessert on birthdays", "Birthday-week double stamps", "Bring a friend on your birthday"] },
-  { key: "prepaid", icon: Ticket, title: "Prepaid Pass", description: "Sell 5 or 10 visit packages.", tag: "Gyms, tutors, car washes", name: "Visit Pass", stamps: "10", reward: "Free visit", details: "Your 11th visit is on us.", bg: "#0e7490", fg: "#ffffff", stampIcon: "stamp", pattern: "grid", suggestions: ["Buy 10, get 1 free", "5-visit starter pack", "Monthly unlimited pass"] },
-  { key: "referral", icon: Users, title: "Referral Reward", description: "Reward customers who bring friends.", tag: "Growing businesses", name: "Referral Rewards", stamps: "5", reward: "Bonus reward", details: "You and your friend both win.", bg: "#3f6212", fg: "#ffffff", stampIcon: "sparkle", pattern: "crosshatch", suggestions: ["Both get a bonus stamp", "Refer 3 friends, get a reward", "Friends get a welcome bonus"] },
+  { key: "cafe", icon: Coffee, title: "Cafe & Bakery", description: "Warm, easy to recognize, made for stamp cards.", tag: "Coffee, pastry, dessert", name: "Coffee Rewards", stamps: "9", reward: "Free coffee", details: "One regular coffee, any size.", bg: "#4b2e2b", fg: "#ffffff", stampIcon: "coffee", pattern: "waves", suggestions: ["Buy 9 coffees, get 1 free", "Free pastry after 5 visits", "Double stamps before 10 AM"] },
+  { key: "restaurant", icon: UtensilsCrossed, title: "Restaurant", description: "Bold meal or visit rewards with clear counter scanning.", tag: "Dining, takeout, bars", name: "Dining Rewards", stamps: "8", reward: "Free appetizer", details: "Available with any dine-in order.", bg: "#9f1239", fg: "#ffffff", stampIcon: "utensils", pattern: "diagonal", suggestions: ["8 visits, free appetizer", "Free dessert after 6 visits", "Lunch club reward"] },
+  { key: "salon", icon: Scissors, title: "Salon & Beauty", description: "Polished service-card styling for repeat bookings.", tag: "Salon, spa, barber", name: "Beauty Rewards", stamps: "6", reward: "$10 off", details: "Any service.", bg: "#be185d", fg: "#ffffff", stampIcon: "scissors", pattern: "arches", suggestions: ["6 visits, $10 off", "Free add-on after 5 visits", "VIP pricing after 10 visits"] },
+  { key: "retail", icon: ShoppingBag, title: "Retail Shop", description: "Clean and branded for boutiques and local stores.", tag: "Retail, gifts, market", name: "Shop Rewards", stamps: "10", reward: "$10 store credit", details: "Valid on your next purchase.", bg: "#0e7490", fg: "#ffffff", stampIcon: "gift", pattern: "checker", suggestions: ["Spend $100, get $10 back", "10 purchases, $10 credit", "Members-only discount"] },
+  { key: "fitness", icon: Dumbbell, title: "Fitness & Wellness", description: "Energetic progress style for visits, classes, and packages.", tag: "Gym, yoga, clinic", name: "Wellness Pass", stamps: "10", reward: "Free class", details: "Your next group class is on us.", bg: "#0f766e", fg: "#ffffff", stampIcon: "star", pattern: "capsule", suggestions: ["10 classes, get 1 free", "5-visit starter pass", "Monthly challenge reward"] },
+  { key: "pet", icon: PawPrint, title: "Pet Services", description: "Friendly card style for groomers and pet care.", tag: "Grooming, pet shop", name: "Pet Perks", stamps: "6", reward: "Free nail trim", details: "Available with any grooming visit.", bg: "#3f6212", fg: "#ffffff", stampIcon: "paw", pattern: "confetti", suggestions: ["6 grooms, free nail trim", "Free treat after 5 visits", "Birthday treat for pets"] },
+  { key: "carwash", icon: Car, title: "Car Wash", description: "High-contrast card for quick barcode or QR scanning.", tag: "Auto, wash, detail", name: "Wash Club", stamps: "8", reward: "Free wash", details: "Standard wash reward.", bg: "#1d4ed8", fg: "#ffffff", stampIcon: "sparkle", pattern: "grid", suggestions: ["8 washes, get 1 free", "Free upgrade after 5 visits", "Detailing discount"] },
+  { key: "premium", icon: Crown, title: "Premium Minimal", description: "Quiet, upscale membership look with fewer distractions.", tag: "VIP, boutique, private", name: "Member Club", stamps: "12", reward: "VIP perk", details: "A members-only treat.", bg: "#111827", fg: "#ffffff", stampIcon: "crown", pattern: "sunburst", suggestions: ["Gold status after 12 visits", "Members-only offers", "Early access for VIPs"] },
 ];
 
 const PALETTES = [
@@ -74,6 +79,7 @@ const PALETTES = [
   { key: "Midnight", bg: "#1e293b", fg: "#ffffff" },
   { key: "Cream", bg: "#f3e9df", fg: "#4b2e2b" },
   { key: "Ocean", bg: "#0e7490", fg: "#ffffff" },
+  { key: "Royal", bg: "#1d4ed8", fg: "#ffffff" },
 ];
 
 const STAMP_STYLE_LABEL: Record<string, string> = {
@@ -164,8 +170,8 @@ export function CardBuilder({
             {step === 0 ? (
               <div className="space-y-6">
                 <Section
-                  title="Choose a Card Template"
-                  description="Start with the closest real-world loyalty setup. You can adjust every detail before creating the card."
+                  title="Choose Your Business Style"
+                  description="Start with the card look customers should recognize in Apple Wallet and Google Wallet. Reward rules come next."
                 >
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {TEMPLATES.map((t) => (
@@ -181,7 +187,10 @@ export function CardBuilder({
                     ))}
                   </div>
                 </Section>
+              </div>
+            ) : null}
 
+            {step === 1 ? (
                 <Section
                   title="Set the Reward"
                   description="Keep the offer simple enough for customers to understand at the counter."
@@ -267,13 +276,12 @@ export function CardBuilder({
                     </div>
                   </div>
                 </Section>
-              </div>
             ) : null}
 
-            {step === 1 ? (
+            {step === 2 ? (
               <Section
-                title="Design the Wallet Card"
-                description="Tune the card so it looks recognizable in Apple Wallet and Google Wallet."
+                title="Fine-tune the Wallet Card"
+                description="Adjust the details that carry through to the customer wallet pass: color, strip pattern, stamp icon, and progress style."
               >
                 <div className="space-y-5">
                   <div>
@@ -370,7 +378,7 @@ export function CardBuilder({
 
                   <div>
                     <p className="mb-2 text-xs font-medium text-muted-foreground">
-                      Background pattern
+                      Pattern for preview and wallet strip
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {PATTERN_KEYS.map((p) => {
@@ -392,6 +400,9 @@ export function CardBuilder({
                         );
                       })}
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Apple Wallet keeps the main pass layout simple, so patterns appear most clearly in the branded strip.
+                    </p>
                   </div>
 
                   <div>
@@ -424,7 +435,7 @@ export function CardBuilder({
               </Section>
             ) : null}
 
-            {step === 2 ? (
+            {step === 3 ? (
               <Section
                 title="Review and Create"
                 description="This creates a draft card. You can activate it and print the QR from the card detail page."
@@ -441,7 +452,7 @@ export function CardBuilder({
                     <p className="text-xs font-semibold text-muted-foreground">Card</p>
                     <p className="mt-1 text-lg font-semibold text-foreground">{name}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {template.title} template
+                      {template.title} style
                     </p>
                   </div>
                 </div>
@@ -499,7 +510,7 @@ export function CardBuilder({
                   <Button
                     type="button"
                     onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-                    disabled={!canContinue}
+                    disabled={step > 0 && !canContinue}
                   >
                     Continue
                   </Button>

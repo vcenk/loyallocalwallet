@@ -42,6 +42,12 @@ export const PATTERN_KEYS = [
   "grid",
   "crosshatch",
   "vertical",
+  "waves",
+  "arches",
+  "checker",
+  "confetti",
+  "sunburst",
+  "capsule",
 ];
 
 // Returns a CSS overlay for the chosen pattern, tinted with the text color.
@@ -75,6 +81,43 @@ export function patternStyle(
     case "vertical":
       return {
         backgroundImage: `repeating-linear-gradient(90deg, ${fg} 0 1px, transparent 1px 10px)`,
+        opacity: 0.12,
+      };
+    case "waves":
+      return {
+        backgroundImage: `radial-gradient(50% 65% at 50% 100%, transparent 62%, ${fg} 64%, transparent 68%)`,
+        backgroundSize: "38px 22px",
+        opacity: 0.16,
+      };
+    case "arches":
+      return {
+        backgroundImage: `radial-gradient(circle at 50% 100%, transparent 46%, ${fg} 48%, transparent 53%)`,
+        backgroundSize: "34px 28px",
+        opacity: 0.15,
+      };
+    case "checker":
+      return {
+        backgroundImage: `linear-gradient(45deg, ${fg} 25%, transparent 25%, transparent 75%, ${fg} 75%), linear-gradient(45deg, ${fg} 25%, transparent 25%, transparent 75%, ${fg} 75%)`,
+        backgroundPosition: "0 0, 10px 10px",
+        backgroundSize: "20px 20px",
+        opacity: 0.1,
+      };
+    case "confetti":
+      return {
+        backgroundImage: `radial-gradient(${fg} 1.4px, transparent 1.6px), radial-gradient(${fg} 1px, transparent 1.2px), linear-gradient(35deg, transparent 46%, ${fg} 47%, ${fg} 53%, transparent 54%)`,
+        backgroundPosition: "0 0, 12px 10px, 4px 6px",
+        backgroundSize: "28px 28px, 24px 24px, 32px 32px",
+        opacity: 0.15,
+      };
+    case "sunburst":
+      return {
+        backgroundImage: `conic-gradient(from 0deg at 18% 18%, ${fg} 0deg 8deg, transparent 8deg 22deg, ${fg} 22deg 30deg, transparent 30deg 360deg)`,
+        opacity: 0.1,
+      };
+    case "capsule":
+      return {
+        backgroundImage: `radial-gradient(14px 8px at 8px 8px, ${fg} 45%, transparent 48%)`,
+        backgroundSize: "34px 18px",
         opacity: 0.12,
       };
     default:

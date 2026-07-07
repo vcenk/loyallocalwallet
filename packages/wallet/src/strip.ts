@@ -47,6 +47,18 @@ function patternDef(key: string, fg: string, s: number): string {
       return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><path d="M0 0 L${10 * s} ${10 * s} M${10 * s} 0 L0 ${10 * s}" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
     case "vertical":
       return `<pattern id="pat" width="${10 * s}" height="${10 * s}" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="${10 * s}" stroke="${fg}" stroke-width="${1.2 * s}"/></pattern>`;
+    case "waves":
+      return `<pattern id="pat" width="${38 * s}" height="${22 * s}" patternUnits="userSpaceOnUse"><path d="M0 ${18 * s} Q${9.5 * s} ${8 * s} ${19 * s} ${18 * s} T${38 * s} ${18 * s}" fill="none" stroke="${fg}" stroke-width="${1.4 * s}"/></pattern>`;
+    case "arches":
+      return `<pattern id="pat" width="${34 * s}" height="${28 * s}" patternUnits="userSpaceOnUse"><path d="M${4 * s} ${26 * s} A${13 * s} ${13 * s} 0 0 1 ${30 * s} ${26 * s}" fill="none" stroke="${fg}" stroke-width="${1.4 * s}"/></pattern>`;
+    case "checker":
+      return `<pattern id="pat" width="${20 * s}" height="${20 * s}" patternUnits="userSpaceOnUse"><rect width="${10 * s}" height="${10 * s}" fill="${fg}"/><rect x="${10 * s}" y="${10 * s}" width="${10 * s}" height="${10 * s}" fill="${fg}"/></pattern>`;
+    case "confetti":
+      return `<pattern id="pat" width="${30 * s}" height="${30 * s}" patternUnits="userSpaceOnUse"><circle cx="${6 * s}" cy="${7 * s}" r="${1.8 * s}" fill="${fg}"/><circle cx="${22 * s}" cy="${18 * s}" r="${1.3 * s}" fill="${fg}"/><path d="M${14 * s} ${24 * s} l${7 * s} ${-5 * s}" stroke="${fg}" stroke-width="${1.4 * s}" stroke-linecap="round"/></pattern>`;
+    case "sunburst":
+      return `<pattern id="pat" width="${42 * s}" height="${42 * s}" patternUnits="userSpaceOnUse"><path d="M${7 * s} ${7 * s} L${7 * s} 0 M${7 * s} ${7 * s} L${13 * s} ${2 * s} M${7 * s} ${7 * s} L${17 * s} ${7 * s} M${7 * s} ${7 * s} L${13 * s} ${13 * s} M${7 * s} ${7 * s} L${7 * s} ${18 * s}" stroke="${fg}" stroke-width="${1.4 * s}" stroke-linecap="round"/></pattern>`;
+    case "capsule":
+      return `<pattern id="pat" width="${34 * s}" height="${18 * s}" patternUnits="userSpaceOnUse"><rect x="${3 * s}" y="${4 * s}" width="${18 * s}" height="${8 * s}" rx="${4 * s}" fill="${fg}"/><rect x="${20 * s}" y="${10 * s}" width="${12 * s}" height="${5 * s}" rx="${2.5 * s}" fill="${fg}"/></pattern>`;
     default:
       return "";
   }
