@@ -159,10 +159,12 @@ export default async function JoinPage({
           <input
             type="checkbox"
             name="marketingConsent"
+            defaultChecked
             className="mt-0.5 h-4 w-4 rounded border-input"
           />
           <span>
             Send me occasional offers and reward reminders from {businessName}.
+            You can opt out anytime by removing your card.
           </span>
         </label>
 
