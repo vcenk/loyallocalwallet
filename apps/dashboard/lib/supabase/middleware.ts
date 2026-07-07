@@ -9,6 +9,7 @@ const PUBLIC_PREFIXES = [
   "/signup",
   "/auth",
   "/join",
+  "/unsubscribe",
   "/api",
   "/privacy",
   "/terms",

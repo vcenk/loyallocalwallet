@@ -117,6 +117,15 @@ export async function generateApplePkpass(
     value: data.customerName || "Member",
   });
 
+  // Self-serve preference / unsubscribe link (auto-detected as tappable in the
+  // back of the pass) — the customer's own opt-out, keyed by the opaque serial.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  pass.backFields.push({
+    key: "preferences",
+    label: "PREFERENCES",
+    value: `Manage offers or unsubscribe:\n${appUrl}/unsubscribe/${data.serialNumber}`,
+  });
+
   // Latest campaign / review nudge. A changeMessage makes it surface as a
   // lock-screen notification when the value changes and the pass is pushed.
   // URLs in back fields are auto-detected as tappable links (e.g. review link).
