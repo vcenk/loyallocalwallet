@@ -152,26 +152,30 @@ export function CardBuilder({
     setFg(p.fg);
   }
 
+  const hiddenCreateFields = (
+    <>
+      <input type="hidden" name="name" value={name} />
+      <input type="hidden" name="rewardModel" value={programType} />
+      <input type="hidden" name="stampsRequired" value={stamps} />
+      <input type="hidden" name="rewardTitle" value={reward} />
+      <input type="hidden" name="rewardDescription" value={rewardDetails} />
+      <input type="hidden" name="backgroundColor" value={bg} />
+      <input type="hidden" name="foregroundColor" value={fg} />
+      <input type="hidden" name="stampIcon" value={icon} />
+      <input type="hidden" name="pattern" value={pattern} />
+      <input type="hidden" name="cardStyle" value={cardStyle} />
+      <input type="hidden" name="stampStyle" value={stampStyle} />
+      <input type="hidden" name="description" value={description} />
+    </>
+  );
+
   return (
     <div>
       <StepHeader steps={[...STEPS]} current={step} />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">
-          <form action={createProgram} className="space-y-6">
-            <input type="hidden" name="name" value={name} />
-            <input type="hidden" name="rewardModel" value={programType} />
-            <input type="hidden" name="stampsRequired" value={stamps} />
-            <input type="hidden" name="rewardTitle" value={reward} />
-            <input type="hidden" name="rewardDescription" value={rewardDetails} />
-            <input type="hidden" name="backgroundColor" value={bg} />
-            <input type="hidden" name="foregroundColor" value={fg} />
-            <input type="hidden" name="stampIcon" value={icon} />
-            <input type="hidden" name="pattern" value={pattern} />
-            <input type="hidden" name="cardStyle" value={cardStyle} />
-            <input type="hidden" name="stampStyle" value={stampStyle} />
-            <input type="hidden" name="description" value={description} />
-
+          <div className="space-y-6">
             {step === 0 ? (
               <div className="space-y-6">
                 <Section
@@ -520,13 +524,16 @@ export function CardBuilder({
                     Continue
                   </Button>
                 ) : (
-                  <Button type="submit" size="lg">
-                    Create draft card
-                  </Button>
+                  <form action={createProgram}>
+                    {hiddenCreateFields}
+                    <Button type="submit" size="lg">
+                      Create draft card
+                    </Button>
+                  </form>
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </div>
 
         <div className="lg:col-span-2">
