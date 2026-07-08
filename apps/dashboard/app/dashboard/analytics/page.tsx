@@ -120,8 +120,8 @@ export default async function AnalyticsPage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <p className="mt-2 text-xs text-muted-foreground">
-              Sends as a wallet card update (title ≤ 40, body ≤ 140 chars).
-              Campaign sending arrives with wallet integration.
+              Sends as a free wallet card update (title ≤ 40, body ≤ 140 chars)
+              to customers who opted in to offers.
             </p>
           </div>
         </div>
