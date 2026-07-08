@@ -95,6 +95,17 @@ function buildLoyaltyObject(data: WalletCardData) {
         body: progressBody,
       },
     ],
+    // Self-serve preference / unsubscribe — mirrors the Apple pass back field so
+    // the customer can opt out from the Google card too. Serial is the auth token.
+    linksModuleData: {
+      uris: [
+        {
+          id: "preferences",
+          description: "Manage offers or unsubscribe",
+          uri: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/unsubscribe/${data.serialNumber}`,
+        },
+      ],
+    },
   };
 }
 

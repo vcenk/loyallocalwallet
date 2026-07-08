@@ -67,10 +67,17 @@ function walletBadge(state: WalletState): {
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; seeded?: string; error?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    seeded?: string;
+    error?: string;
+    consent?: string;
+  }>;
 }) {
-  const { q, seeded, error } = await searchParams;
+  const { q, seeded, error, consent } = await searchParams;
   const term = (q ?? "").replace(/[,()*%]/g, "").trim().slice(0, 50);
+  const consentFilter =
+    consent === "in" || consent === "out" ? consent : "all";
 
   const supabase = await createClient();
   const membership = await getActiveMembership(supabase);
@@ -80,7 +87,7 @@ export default async function CustomersPage({
   let query = supabase
     .from("customers")
     .select(
-      "id, first_name, last_name, email, phone, first_seen_at, last_seen_at, wallet_passes(current_stamps, rewards_available, status)",
+      "id, first_name, last_name, email, phone, first_seen_at, last_seen_at, marketing_consent, wallet_passes(current_stamps, rewards_available, status)",
     )
     .order("first_seen_at", { ascending: false })
     .limit(200);
@@ -90,9 +97,24 @@ export default async function CustomersPage({
       `first_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`,
     );
   }
+  if (consentFilter === "in") query = query.eq("marketing_consent", true);
+  else if (consentFilter === "out") query = query.eq("marketing_consent", false);
 
   const { data: customers } = await query;
   const rows = customers ?? [];
+
+  const consentTabs = [
+    { key: "all", label: "All" },
+    { key: "in", label: "Opted in" },
+    { key: "out", label: "Opted out" },
+  ] as const;
+  const consentHref = (key: string) => {
+    const p = new URLSearchParams();
+    if (term) p.set("q", term);
+    if (key !== "all") p.set("consent", key);
+    const qs = p.toString();
+    return qs ? `/dashboard/customers?${qs}` : "/dashboard/customers";
+  };
 
   return (
     <div>
@@ -139,6 +161,25 @@ export default async function CustomersPage({
         </Button>
       </form>
 
+      <div className="mb-4 inline-flex rounded-xl border border-border bg-muted/40 p-1">
+        {consentTabs.map((tab) => {
+          const active = consentFilter === tab.key;
+          return (
+            <Link
+              key={tab.key}
+              href={consentHref(tab.key)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                active
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+
       {rows.length === 0 ? (
         <EmptyState
           icon={<Users className="h-5 w-5" />}
@@ -159,6 +200,7 @@ export default async function CustomersPage({
                   <th className="px-5 py-3 font-semibold">Stamps</th>
                   <th className="px-5 py-3 font-semibold">Reward</th>
                   <th className="px-5 py-3 font-semibold">Last visit</th>
+                  <th className="px-5 py-3 font-semibold">Offers</th>
                   <th className="px-5 py-3 font-semibold">Wallet</th>
                 </tr>
               </thead>
@@ -225,6 +267,13 @@ export default async function CustomersPage({
                       </td>
                       <td className="px-5 py-3 text-muted-foreground">
                         {formatDate(c.last_seen_at ?? c.first_seen_at)}
+                      </td>
+                      <td className="px-5 py-3">
+                        {c.marketing_consent ? (
+                          <Badge variant="success">Opted in</Badge>
+                        ) : (
+                          <Badge variant="default">Opted out</Badge>
+                        )}
                       </td>
                       <td className="px-5 py-3">
                         <Badge variant={badge.variant}>{badge.label}</Badge>
