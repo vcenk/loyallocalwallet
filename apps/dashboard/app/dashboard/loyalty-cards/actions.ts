@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveMembership } from "@/lib/business";
 import { getBusinessPlan, countPrograms } from "@/lib/plan";
 import { PROGRAM_TYPES, type ProgramType } from "@llw/config";
@@ -191,4 +192,77 @@ export async function updateDesign(formData: FormData) {
 
   revalidatePath(`/dashboard/loyalty-cards/${programId}`);
   redirect(`/dashboard/loyalty-cards/${programId}?saved=1`);
+}
+
+// Removes a card. Because wallet_passes cascade-delete with the program, a card
+// that already has members is ARCHIVED (their saved cards keep working) instead
+// of hard-deleted. An empty card is deleted outright (its design cascades).
+export async function deleteProgram(formData: FormData) {
+  const programId = String(formData.get("programId") ?? "");
+  const supabase = await createClient();
+  const m = await getActiveMembership(supabase);
+  if (!m) redirect("/login");
+  if (m.role !== "business_owner" && m.role !== "business_admin") {
+    redirect(
+      `/dashboard/loyalty-cards/${programId}?error=${encodeURIComponent("Only owners and admins can remove cards.")}`,
+    );
+  }
+
+  const { data: program } = await supabase
+    .from("loyalty_programs")
+    .select("id, name")
+    .eq("id", programId)
+    .eq("business_id", m.businessId)
+    .maybeSingle();
+  if (!program) redirect("/dashboard/loyalty-cards");
+
+  const { count } = await supabase
+    .from("wallet_passes")
+    .select("id", { count: "exact", head: true })
+    .eq("program_id", programId);
+  const memberCount = count ?? 0;
+
+  const audit = async (archived: boolean) => {
+    await createAdminClient()
+      .from("audit_logs")
+      .insert({
+        business_id: m.businessId,
+        actor_user_id: m.userId,
+        actor_staff_member_id: m.staffMemberId,
+        action: archived ? "card_archived" : "card_deleted",
+        entity_type: "loyalty_program",
+        entity_id: programId,
+        metadata: { name: program.name, members: memberCount },
+      });
+  };
+
+  if (memberCount > 0) {
+    const { error } = await supabase
+      .from("loyalty_programs")
+      .update({ status: "archived" })
+      .eq("id", programId)
+      .eq("business_id", m.businessId);
+    if (error) {
+      redirect(
+        `/dashboard/loyalty-cards/${programId}?error=${encodeURIComponent(error.message)}`,
+      );
+    }
+    await audit(true);
+    revalidatePath("/dashboard/loyalty-cards");
+    redirect("/dashboard/loyalty-cards?archived=1");
+  }
+
+  const { error } = await supabase
+    .from("loyalty_programs")
+    .delete()
+    .eq("id", programId)
+    .eq("business_id", m.businessId);
+  if (error) {
+    redirect(
+      `/dashboard/loyalty-cards/${programId}?error=${encodeURIComponent(error.message)}`,
+    );
+  }
+  await audit(false);
+  revalidatePath("/dashboard/loyalty-cards");
+  redirect("/dashboard/loyalty-cards?removed=1");
 }

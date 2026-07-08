@@ -18,7 +18,12 @@ const STATUS_VARIANT: Record<string, BadgeProps["variant"]> = {
   archived: "default",
 };
 
-export default async function LoyaltyCardsPage() {
+export default async function LoyaltyCardsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ removed?: string; archived?: string }>;
+}) {
+  const { removed, archived } = await searchParams;
   const supabase = await createClient();
 
   const [{ data: programs }, { data: designs }, { data: business }, { data: passes }] =
@@ -26,6 +31,7 @@ export default async function LoyaltyCardsPage() {
       supabase
         .from("loyalty_programs")
         .select("id, name, status, stamps_required, reward_title, program_type")
+        .neq("status", "archived")
         .order("created_at", { ascending: false }),
       supabase.from("card_designs").select("*"),
       supabase.from("businesses").select("name, logo_url").limit(1).maybeSingle(),
@@ -69,6 +75,17 @@ export default async function LoyaltyCardsPage() {
         description="Create and design your stamp cards and rewards."
         action={newButton}
       />
+
+      {removed ? (
+        <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">
+          Card removed.
+        </p>
+      ) : archived ? (
+        <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Card archived — it had members, so their saved wallet cards keep
+          working.
+        </p>
+      ) : null}
 
       {rows.length === 0 ? (
         <EmptyState
