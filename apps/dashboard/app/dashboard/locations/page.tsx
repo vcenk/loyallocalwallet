@@ -1,4 +1,4 @@
-import { MapPin, Phone, Plus } from "lucide-react";
+import { MapPin, Phone, Plus, CheckCircle2, Building2 } from "lucide-react";
 import {
   PageHeader,
   Card,
@@ -55,7 +55,19 @@ export default async function LocationsPage({
   ]);
 
   const rows = locations ?? [];
-  const atLimit = plan ? activeCount >= plan.limits.locations : false;
+  const limit = plan?.limits.locations ?? 0;
+  const atLimit = plan ? activeCount >= limit : false;
+  const usagePct = limit ? Math.min(100, (activeCount / limit) * 100) : 0;
+
+  const stats = [
+    { label: "Locations", value: rows.length, icon: <MapPin className="h-4 w-4" /> },
+    { label: "Active", value: activeCount, icon: <CheckCircle2 className="h-4 w-4" /> },
+    {
+      label: "Plan usage",
+      value: plan ? `${activeCount}/${limit}` : "—",
+      icon: <Building2 className="h-4 w-4" />,
+    },
+  ];
 
   return (
     <div>
@@ -66,6 +78,27 @@ export default async function LocationsPage({
 
       {saved ? <Banner tone="green">Locations updated.</Banner> : null}
       {error ? <Banner tone="red">{error}</Banner> : null}
+
+      {rows.length > 0 ? (
+        <div className="mb-6 grid grid-cols-3 gap-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-5 shadow-sm"
+            >
+              <div className="flex items-center gap-2 text-muted-foreground">
+                {s.icon}
+                <span className="text-xs font-semibold uppercase tracking-wide">
+                  {s.label}
+                </span>
+              </div>
+              <p className="font-display text-3xl font-extrabold text-foreground">
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* List */}
@@ -78,52 +111,53 @@ export default async function LocationsPage({
             />
           ) : (
             rows.map((loc) => (
-              <Card key={loc.id}>
-                <CardContent className="flex items-start justify-between gap-4 p-5">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <MapPin className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="font-semibold text-foreground">{loc.name}</p>
-                      {loc.address_line1 ? (
-                        <p className="text-sm text-muted-foreground">
-                          {loc.address_line1}
-                        </p>
-                      ) : null}
-                      {cityLine(loc) ? (
-                        <p className="text-sm text-muted-foreground">
-                          {cityLine(loc)}
-                        </p>
-                      ) : null}
-                      {loc.phone ? (
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5" />
-                          {loc.phone}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant={loc.is_active ? "success" : "default"}>
-                      {loc.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                    {canEdit ? (
-                      <form action={setLocationActive}>
-                        <input type="hidden" name="locationId" value={loc.id} />
-                        <input
-                          type="hidden"
-                          name="active"
-                          value={loc.is_active ? "false" : "true"}
-                        />
-                        <Button type="submit" variant="outline" size="sm">
-                          {loc.is_active ? "Deactivate" : "Activate"}
-                        </Button>
-                      </form>
+              <div
+                key={loc.id}
+                className="flex items-start justify-between gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-primary">
+                    <MapPin className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-foreground">{loc.name}</p>
+                    {loc.address_line1 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {loc.address_line1}
+                      </p>
+                    ) : null}
+                    {cityLine(loc) ? (
+                      <p className="text-sm text-muted-foreground">
+                        {cityLine(loc)}
+                      </p>
+                    ) : null}
+                    {loc.phone ? (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                        {loc.phone}
+                      </p>
                     ) : null}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={loc.is_active ? "success" : "default"}>
+                    {loc.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                  {canEdit ? (
+                    <form action={setLocationActive}>
+                      <input type="hidden" name="locationId" value={loc.id} />
+                      <input
+                        type="hidden"
+                        name="active"
+                        value={loc.is_active ? "false" : "true"}
+                      />
+                      <Button type="submit" variant="outline" size="sm">
+                        {loc.is_active ? "Deactivate" : "Activate"}
+                      </Button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -131,16 +165,24 @@ export default async function LocationsPage({
         {/* Add */}
         {canEdit ? (
           <div>
-            <Card>
+            <Card className="rounded-3xl">
               <CardHeader>
                 <CardTitle>Add a location</CardTitle>
                 <CardDescription>
                   {plan
-                    ? `${activeCount} of ${plan.limits.locations} used on your ${plan.planKey} plan.`
+                    ? `${activeCount} of ${limit} used on your ${plan.planKey} plan.`
                     : "Add a shop."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {plan ? (
+                  <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <span
+                      className="block h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${usagePct}%` }}
+                    />
+                  </div>
+                ) : null}
                 {atLimit ? (
                   <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
                     You&apos;ve reached your plan&apos;s location limit. Upgrade

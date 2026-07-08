@@ -1,4 +1,4 @@
-import { Users, Mail } from "lucide-react";
+import { Users, Mail, CheckCircle2, UserCog } from "lucide-react";
 import {
   PageHeader,
   Card,
@@ -37,7 +37,7 @@ const ROLE_VARIANT: Record<string, BadgeProps["variant"]> = {
   staff: "default",
 };
 
-const AVATAR_COLORS = ["#ae3115", "#c0421e", "#b45309", "#0f766e", "#be185d", "#7c2d12"];
+const AVATAR_COLORS = ["#ae3115", "#3f6212", "#0f766e", "#1e3a8a", "#be185d", "#7c2d12"];
 function avatarColor(seed: string) {
   let h = 0;
   for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -89,7 +89,20 @@ export default async function StaffPage({
     }
   }
 
-  const atLimit = plan ? activeCount >= plan.limits.staff : false;
+  const limit = plan?.limits.staff ?? 0;
+  const atLimit = plan ? activeCount >= limit : false;
+  const usagePct = limit ? Math.min(100, (activeCount / limit) * 100) : 0;
+  const activeMembers = rows.filter((m) => m.is_active).length;
+
+  const stats = [
+    { label: "Team", value: rows.length, icon: <Users className="h-4 w-4" /> },
+    { label: "Active", value: activeMembers, icon: <CheckCircle2 className="h-4 w-4" /> },
+    {
+      label: "Plan usage",
+      value: plan ? `${activeCount}/${limit}` : "—",
+      icon: <UserCog className="h-4 w-4" />,
+    },
+  ];
 
   return (
     <div>
@@ -106,6 +119,27 @@ export default async function StaffPage({
         <Banner tone="red">{error}</Banner>
       ) : null}
 
+      {rows.length > 0 ? (
+        <div className="mb-6 grid grid-cols-3 gap-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-5 shadow-sm"
+            >
+              <div className="flex items-center gap-2 text-muted-foreground">
+                {s.icon}
+                <span className="text-xs font-semibold uppercase tracking-wide">
+                  {s.label}
+                </span>
+              </div>
+              <p className="font-display text-3xl font-extrabold text-foreground">
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Team list */}
         <div className="space-y-4 lg:col-span-2">
@@ -116,62 +150,63 @@ export default async function StaffPage({
             const locName =
               (member.locations as { name: string } | null)?.name ?? "All locations";
             return (
-              <Card key={member.id}>
-                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                      style={{ backgroundColor: avatarColor(email) }}
-                    >
-                      {email.slice(0, 2).toUpperCase()}
-                    </span>
-                    <div>
-                      <p className="font-medium text-foreground">{email}</p>
-                      <p className="text-xs text-muted-foreground">{locName}</p>
-                    </div>
+              <div
+                key={member.id}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{ backgroundColor: avatarColor(email) }}
+                  >
+                    {email.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-foreground">{email}</p>
+                    <p className="text-xs text-muted-foreground">{locName}</p>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-3">
-                    <Badge variant={ROLE_VARIANT[member.role] ?? "default"}>
-                      {ROLE_LABEL[member.role] ?? member.role}
-                    </Badge>
-                    {!member.is_active ? (
-                      <Badge variant="destructive">Inactive</Badge>
-                    ) : null}
+                <div className="flex items-center gap-3">
+                  <Badge variant={ROLE_VARIANT[member.role] ?? "default"}>
+                    {ROLE_LABEL[member.role] ?? member.role}
+                  </Badge>
+                  {!member.is_active ? (
+                    <Badge variant="destructive">Inactive</Badge>
+                  ) : null}
 
-                    {canEdit && !isOwner ? (
-                      <div className="flex items-center gap-2">
-                        <form action={updateStaffRole} className="flex items-center gap-2">
+                  {canEdit && !isOwner ? (
+                    <div className="flex items-center gap-2">
+                      <form action={updateStaffRole} className="flex items-center gap-2">
+                        <input type="hidden" name="staffMemberId" value={member.id} />
+                        <select name="role" defaultValue={member.role} className={SELECT_CLASS} style={{ width: 120 }}>
+                          {ASSIGNABLE_ROLES.map((r) => (
+                            <option key={r} value={r}>
+                              {ROLE_LABEL[r]}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" variant="outline" size="sm">
+                          Save
+                        </Button>
+                      </form>
+                      {!isSelf ? (
+                        <form action={setStaffActive}>
                           <input type="hidden" name="staffMemberId" value={member.id} />
-                          <select name="role" defaultValue={member.role} className={SELECT_CLASS} style={{ width: 120 }}>
-                            {ASSIGNABLE_ROLES.map((r) => (
-                              <option key={r} value={r}>
-                                {ROLE_LABEL[r]}
-                              </option>
-                            ))}
-                          </select>
+                          <input
+                            type="hidden"
+                            name="active"
+                            value={member.is_active ? "false" : "true"}
+                          />
                           <Button type="submit" variant="outline" size="sm">
-                            Save
+                            {member.is_active ? "Deactivate" : "Activate"}
                           </Button>
                         </form>
-                        {!isSelf ? (
-                          <form action={setStaffActive}>
-                            <input type="hidden" name="staffMemberId" value={member.id} />
-                            <input
-                              type="hidden"
-                              name="active"
-                              value={member.is_active ? "false" : "true"}
-                            />
-                            <Button type="submit" variant="outline" size="sm">
-                              {member.is_active ? "Deactivate" : "Activate"}
-                            </Button>
-                          </form>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -179,16 +214,24 @@ export default async function StaffPage({
         {/* Invite */}
         {canEdit ? (
           <div>
-            <Card>
+            <Card className="rounded-3xl">
               <CardHeader>
                 <CardTitle>Invite a team member</CardTitle>
                 <CardDescription>
                   {plan
-                    ? `${activeCount} of ${plan.limits.staff} used on your ${plan.planKey} plan.`
+                    ? `${activeCount} of ${limit} used on your ${plan.planKey} plan.`
                     : "Add someone to your team."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {plan ? (
+                  <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <span
+                      className="block h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${usagePct}%` }}
+                    />
+                  </div>
+                ) : null}
                 {atLimit ? (
                   <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
                     You&apos;ve reached your plan&apos;s team limit. Upgrade in
