@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       `${customer?.first_name ?? "Guest"} ${customer?.last_name ?? ""}`.trim(),
     programId: program.id,
     programName: program.name,
+    programType: program.program_type,
     rewardTitle: program.reward_title,
     stampsRequired: program.stamps_required,
     currentStamps: progress.towardNext,

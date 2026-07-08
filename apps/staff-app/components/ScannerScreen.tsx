@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -10,25 +11,37 @@ import {
   View,
 } from "react-native";
 import { supabase } from "../lib/supabase";
-import { api, type ScanResult } from "../lib/api";
+import { api, type ScanResult, type StaffLocation } from "../lib/api";
 import { colors } from "../lib/theme";
 import { CameraScanner } from "./CameraScanner";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 export function ScannerScreen({
   onScanned,
+  locationId,
+  onLocationChange,
 }: {
   onScanned: (result: ScanResult) => void;
+  locationId: string | null;
+  onLocationChange: (id: string | null) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState("");
   const [showCamera, setShowCamera] = useState(false);
+  const [locations, setLocations] = useState<StaffLocation[]>([]);
+
+  useEffect(() => {
+    api
+      .listLocations()
+      .then((r) => setLocations(r.locations))
+      .catch(() => setLocations([]));
+  }, []);
 
   async function lookup(barcodeValue: string) {
     if (busy || !barcodeValue) return;
     setBusy(true);
     try {
-      const result = await api.scan(barcodeValue.trim());
+      const result = await api.scan(barcodeValue.trim(), locationId);
       onScanned(result);
     } catch (e) {
       Alert.alert("Scan failed", e instanceof Error ? e.message : "Try again.");
@@ -51,6 +64,31 @@ export function ScannerScreen({
             <Text style={styles.signOut}>Sign out</Text>
           </TouchableOpacity>
         </View>
+
+        {locations.length > 0 ? (
+          <View>
+            <Text style={styles.pickerLabel}>Location</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+            >
+              <LocationChip
+                label="All locations"
+                active={!locationId}
+                onPress={() => onLocationChange(null)}
+              />
+              {locations.map((l) => (
+                <LocationChip
+                  key={l.id}
+                  label={l.name}
+                  active={locationId === l.id}
+                  onPress={() => onLocationChange(l.id)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {showCamera ? (
           <View style={styles.cameraWrap}>
@@ -110,6 +148,27 @@ export function ScannerScreen({
   );
 }
 
+function LocationChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.chip, active && styles.chipActive]}
+    >
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { flex: 1, padding: 20, gap: 16 },
@@ -122,6 +181,25 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: "800", color: colors.ink },
   subtitle: { fontSize: 13, color: colors.muted, marginTop: 2, maxWidth: 240 },
   signOut: { color: colors.primary, fontWeight: "700" },
+  pickerLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.muted,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  chipRow: { gap: 8, paddingRight: 8 },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.ink, fontWeight: "600", fontSize: 14 },
+  chipTextActive: { color: colors.primaryText },
   cameraWrap: {
     flex: 1,
     borderRadius: 24,

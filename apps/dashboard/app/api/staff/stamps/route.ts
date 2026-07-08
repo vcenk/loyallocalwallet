@@ -10,6 +10,7 @@ const bodySchema = z.object({
   locationId: z.string().uuid().optional(),
   eventType: z.enum(["earn", "bonus"]).optional(),
   reason: z.string().max(120).optional(),
+  quantity: z.coerce.number().int().min(1).max(100000).optional(),
 });
 
 // POST /api/staff/stamps — add a stamp or bonus stamp to a pass.
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       isBonus: parsed.data.eventType === "bonus",
       reason: parsed.data.reason,
       locationId: parsed.data.locationId ?? null,
+      quantity: parsed.data.quantity,
     },
   );
 

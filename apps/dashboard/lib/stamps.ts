@@ -177,7 +177,7 @@ export async function addStamp(
     isBonus ? "bonus_stamp_added" : "stamp_added",
     "wallet_pass",
     pass.id,
-    { quantity: 1, reason, total: progress.total },
+    { quantity, reason, total: progress.total },
   );
   await syncWalletForPass(admin, pass.id);
 

@@ -6,13 +6,34 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { api, type ScanResult, type ProgressResult } from "../lib/api";
+import {
+  api,
+  type ScanResult,
+  type ProgressResult,
+  type ProgramType,
+} from "../lib/api";
 import { colors } from "../lib/theme";
 
 const BONUS_REASONS = ["Referral", "Birthday", "Manager bonus"];
+
+// Programs that record a variable amount per visit (vs a single stamp/visit).
+const AMOUNT_MODES: ProgramType[] = ["points", "spend"];
+
+const ADD_LABEL: Record<ProgramType, string> = {
+  stamps: "Add stamp",
+  visits: "Add visit",
+  points: "Add points",
+  spend: "Add amount",
+};
+
+const AMOUNT_PLACEHOLDER: Record<string, string> = {
+  points: "Points earned",
+  spend: "Amount spent",
+};
 
 // Compact stamp progress: dots up to a reasonable count, otherwise a number.
 function StampDots({ filled, total }: { filled: number; total: number }) {
@@ -37,9 +58,11 @@ function StampDots({ filled, total }: { filled: number; total: number }) {
 
 export function ResultScreen({
   scan,
+  locationId,
   onBack,
 }: {
   scan: ScanResult;
+  locationId: string | null;
   onBack: () => void;
 }) {
   const [progress, setProgress] = useState<ProgressResult>({
@@ -48,6 +71,9 @@ export function ResultScreen({
     rewardsAvailable: scan.rewardsAvailable,
   });
   const [busy, setBusy] = useState(false);
+  const [amount, setAmount] = useState("1");
+
+  const amountMode = AMOUNT_MODES.includes(scan.programType);
 
   async function run(fn: () => Promise<ProgressResult>) {
     if (busy) return;
@@ -60,6 +86,13 @@ export function ResultScreen({
     } finally {
       setBusy(false);
     }
+  }
+
+  function addEarn() {
+    const quantity = amountMode
+      ? Math.max(1, Math.floor(Number(amount) || 1))
+      : 1;
+    run(() => api.addStamp(scan.walletPassId, { quantity, locationId }));
   }
 
   const rewardReady = progress.rewardsAvailable > 0;
@@ -104,7 +137,7 @@ export function ResultScreen({
         {rewardReady ? (
           <TouchableOpacity
             style={[styles.successButton, busy && styles.disabled]}
-            onPress={() => run(() => api.redeem(scan.walletPassId))}
+            onPress={() => run(() => api.redeem(scan.walletPassId, locationId))}
             disabled={busy}
           >
             {busy ? (
@@ -115,17 +148,43 @@ export function ResultScreen({
           </TouchableOpacity>
         ) : null}
 
-        <TouchableOpacity
-          style={[styles.primaryButton, busy && styles.disabled]}
-          onPress={() => run(() => api.addStamp(scan.walletPassId))}
-          disabled={busy}
-        >
-          {busy ? (
-            <ActivityIndicator color={colors.primaryText} />
-          ) : (
-            <Text style={styles.primaryText}>+ Add stamp</Text>
-          )}
-        </TouchableOpacity>
+        {amountMode ? (
+          <View style={styles.amountRow}>
+            <TextInput
+              style={styles.amountInput}
+              keyboardType="number-pad"
+              value={amount}
+              onChangeText={setAmount}
+              placeholder={AMOUNT_PLACEHOLDER[scan.programType] ?? "Amount"}
+              placeholderTextColor={colors.muted}
+            />
+            <TouchableOpacity
+              style={[styles.primaryButtonFlex, busy && styles.disabled]}
+              onPress={addEarn}
+              disabled={busy}
+            >
+              {busy ? (
+                <ActivityIndicator color={colors.primaryText} />
+              ) : (
+                <Text style={styles.primaryText}>
+                  {ADD_LABEL[scan.programType]}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.primaryButton, busy && styles.disabled]}
+            onPress={addEarn}
+            disabled={busy}
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.primaryText} />
+            ) : (
+              <Text style={styles.primaryText}>+ {ADD_LABEL[scan.programType]}</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.bonusLabel}>Bonus stamp</Text>
         <View style={styles.bonusRow}>
@@ -135,7 +194,11 @@ export function ResultScreen({
               style={[styles.bonusChip, busy && styles.disabled]}
               onPress={() =>
                 run(() =>
-                  api.addStamp(scan.walletPassId, { eventType: "bonus", reason }),
+                  api.addStamp(scan.walletPassId, {
+                    eventType: "bonus",
+                    reason,
+                    locationId,
+                  }),
                 )
               }
               disabled={busy}
@@ -203,6 +266,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  primaryButtonFlex: {
+    flex: 1,
+    height: 60,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   successButton: {
     height: 60,
     backgroundColor: colors.success,
@@ -212,6 +283,20 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: colors.primaryText, fontSize: 18, fontWeight: "800" },
   disabled: { opacity: 0.6 },
+  amountRow: { flexDirection: "row", gap: 10 },
+  amountInput: {
+    width: 110,
+    height: 60,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.ink,
+    textAlign: "center",
+  },
   bonusLabel: { color: colors.muted, fontWeight: "700", marginTop: 6 },
   bonusRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   bonusChip: {

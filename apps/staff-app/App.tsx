@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import type { ScanResult } from "./lib/api";
@@ -10,12 +11,16 @@ import { ScannerScreen } from "./components/ScannerScreen";
 import { ResultScreen } from "./components/ResultScreen";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+const LOCATION_KEY = "llw.selectedLocationId";
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [scan, setScan] = useState<ScanResult | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
 
   useEffect(() => {
+    AsyncStorage.getItem(LOCATION_KEY).then((v) => setLocationId(v || null));
     if (!supabaseConfigured) {
       setReady(true);
       return;
@@ -30,6 +35,12 @@ export default function App() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  function chooseLocation(id: string | null) {
+    setLocationId(id);
+    if (id) AsyncStorage.setItem(LOCATION_KEY, id);
+    else AsyncStorage.removeItem(LOCATION_KEY);
+  }
 
   return (
     <View style={styles.root}>
@@ -50,9 +61,17 @@ export default function App() {
         ) : !session ? (
           <LoginScreen />
         ) : scan ? (
-          <ResultScreen scan={scan} onBack={() => setScan(null)} />
+          <ResultScreen
+            scan={scan}
+            locationId={locationId}
+            onBack={() => setScan(null)}
+          />
         ) : (
-          <ScannerScreen onScanned={setScan} />
+          <ScannerScreen
+            onScanned={setScan}
+            locationId={locationId}
+            onLocationChange={chooseLocation}
+          />
         )}
       </ErrorBoundary>
     </View>
