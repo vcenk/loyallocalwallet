@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Search, Stamp } from "lucide-react";
+import { Users, Search, Stamp, ChevronDown } from "lucide-react";
 import {
   PageHeader,
   EmptyState,
@@ -13,6 +13,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveMembership } from "@/lib/business";
 import { seedDemoCustomers } from "./actions";
 
+const PAGE_SIZE = 25;
+
 const dateFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -25,19 +27,17 @@ function formatDate(iso: string | null) {
 
 const AVATAR_COLORS = [
   "#ae3115",
-  "#c0421e",
-  "#b45309",
-  "#0f766e",
-  "#be185d",
-  "#7c2d12",
   "#3f6212",
+  "#0f766e",
+  "#1e3a8a",
+  "#7c2d12",
   "#0e7490",
+  "#be185d",
+  "#b45309",
 ];
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  const str = `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
-  return str || "G";
+function initial(name: string) {
+  return (name.trim()[0] ?? "G").toUpperCase();
 }
 
 function avatarColor(seed: string) {
@@ -72,36 +72,55 @@ export default async function CustomersPage({
     seeded?: string;
     error?: string;
     consent?: string;
+    show?: string;
   }>;
 }) {
-  const { q, seeded, error, consent } = await searchParams;
+  const { q, seeded, error, consent, show } = await searchParams;
   const term = (q ?? "").replace(/[,()*%]/g, "").trim().slice(0, 50);
   const consentFilter =
     consent === "in" || consent === "out" ? consent : "all";
+  const limit = Math.min(
+    500,
+    Math.max(PAGE_SIZE, parseInt(show ?? "", 10) || PAGE_SIZE),
+  );
 
   const supabase = await createClient();
   const membership = await getActiveMembership(supabase);
   const canSeed =
     membership?.role === "business_owner" ||
     membership?.role === "business_admin";
-  let query = supabase
+
+  const orFilter = term
+    ? `first_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`
+    : null;
+  const consentValue =
+    consentFilter === "in" ? true : consentFilter === "out" ? false : null;
+
+  let countQuery = supabase
+    .from("customers")
+    .select("id", { count: "exact", head: true });
+  if (orFilter) countQuery = countQuery.or(orFilter);
+  if (consentValue !== null)
+    countQuery = countQuery.eq("marketing_consent", consentValue);
+
+  let pageQuery = supabase
     .from("customers")
     .select(
       "id, first_name, last_name, email, phone, first_seen_at, last_seen_at, marketing_consent, wallet_passes(current_stamps, rewards_available, status)",
     )
     .order("first_seen_at", { ascending: false })
-    .limit(200);
+    .limit(limit);
+  if (orFilter) pageQuery = pageQuery.or(orFilter);
+  if (consentValue !== null)
+    pageQuery = pageQuery.eq("marketing_consent", consentValue);
 
-  if (term) {
-    query = query.or(
-      `first_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`,
-    );
-  }
-  if (consentFilter === "in") query = query.eq("marketing_consent", true);
-  else if (consentFilter === "out") query = query.eq("marketing_consent", false);
-
-  const { data: customers } = await query;
+  const [{ count }, { data: customers }] = await Promise.all([
+    countQuery,
+    pageQuery,
+  ]);
   const rows = customers ?? [];
+  const total = count ?? rows.length;
+  const hasMore = total > rows.length;
 
   const consentTabs = [
     { key: "all", label: "All" },
@@ -115,12 +134,19 @@ export default async function CustomersPage({
     const qs = p.toString();
     return qs ? `/dashboard/customers?${qs}` : "/dashboard/customers";
   };
+  const showMoreHref = () => {
+    const p = new URLSearchParams();
+    if (term) p.set("q", term);
+    if (consentFilter !== "all") p.set("consent", consentFilter);
+    p.set("show", String(limit + PAGE_SIZE));
+    return `/dashboard/customers?${p.toString()}`;
+  };
 
   return (
     <div>
       <PageHeader
         title="Customers"
-        description={`${rows.length} ${rows.length === 1 ? "customer" : "customers"} enrolled in your loyalty programs.`}
+        description={`${total} ${total === 1 ? "customer" : "customers"} enrolled in your loyalty programs.`}
         action={
           canSeed ? (
             <form action={seedDemoCustomers}>
@@ -143,41 +169,44 @@ export default async function CustomersPage({
         </p>
       ) : null}
 
-      <form
-        method="get"
-        className="mb-4 flex max-w-sm items-center gap-2"
-      >
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            name="q"
-            defaultValue={term}
-            placeholder="Search name, email, phone"
-            className="pl-9"
-          />
-        </div>
-        <Button type="submit" variant="outline" size="sm">
-          Search
-        </Button>
-      </form>
+      {/* Search + consent filter on one row */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <form method="get" className="flex flex-1 items-center gap-3 sm:min-w-[420px]">
+          {consentFilter !== "all" && (
+            <input type="hidden" name="consent" value={consentFilter} />
+          )}
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              name="q"
+              defaultValue={term}
+              placeholder="Search name, email, phone"
+              className="h-12 rounded-2xl pl-11 text-base"
+            />
+          </div>
+          <Button type="submit" className="h-12 rounded-2xl px-7 text-base">
+            Search
+          </Button>
+        </form>
 
-      <div className="mb-4 inline-flex rounded-xl border border-border bg-muted/40 p-1">
-        {consentTabs.map((tab) => {
-          const active = consentFilter === tab.key;
-          return (
-            <Link
-              key={tab.key}
-              href={consentHref(tab.key)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
+        <div className="flex items-center gap-2">
+          {consentTabs.map((tab) => {
+            const active = consentFilter === tab.key;
+            return (
+              <Link
+                key={tab.key}
+                href={consentHref(tab.key)}
+                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "border border-border bg-card text-foreground hover:bg-muted"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {rows.length === 0 ? (
@@ -191,100 +220,119 @@ export default async function CustomersPage({
           }
         />
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-3 font-semibold">Customer</th>
-                  <th className="px-5 py-3 font-semibold">Stamps</th>
-                  <th className="px-5 py-3 font-semibold">Reward</th>
-                  <th className="px-5 py-3 font-semibold">Last visit</th>
-                  <th className="px-5 py-3 font-semibold">Offers</th>
-                  <th className="px-5 py-3 font-semibold">Wallet</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rows.map((c) => {
-                  const passes = c.wallet_passes ?? [];
-                  const stamps = passes.reduce(
-                    (s, p) => s + (p.current_stamps ?? 0),
-                    0,
-                  );
-                  const rewards = passes.reduce(
-                    (s, p) => s + (p.rewards_available ?? 0),
-                    0,
-                  );
-                  const statuses = passes.map((p) => p.status);
-                  let wallet: WalletState = "none";
-                  if (passes.length) {
-                    if (statuses.some((s) => s === "active" || s === "installed"))
-                      wallet = "saved";
-                    else if (statuses.every((s) => s === "voided" || s === "deleted"))
-                      wallet = "removed";
-                    else wallet = "pending";
-                  }
-                  const badge = walletBadge(wallet);
-                  const name =
-                    `${c.first_name ?? "Guest"} ${c.last_name ?? ""}`.trim();
-                  const contact = c.email ?? c.phone ?? "—";
+        <>
+          <Card className="overflow-hidden rounded-3xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Customer</th>
+                    <th className="px-6 py-4 font-semibold">Stamps</th>
+                    <th className="px-6 py-4 font-semibold">Reward</th>
+                    <th className="px-6 py-4 font-semibold">Last visit</th>
+                    <th className="px-6 py-4 font-semibold">Offers</th>
+                    <th className="px-6 py-4 font-semibold">Wallet</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {rows.map((c) => {
+                    const passes = c.wallet_passes ?? [];
+                    const stamps = passes.reduce(
+                      (s, p) => s + (p.current_stamps ?? 0),
+                      0,
+                    );
+                    const rewards = passes.reduce(
+                      (s, p) => s + (p.rewards_available ?? 0),
+                      0,
+                    );
+                    const statuses = passes.map((p) => p.status);
+                    let wallet: WalletState = "none";
+                    if (passes.length) {
+                      if (statuses.some((s) => s === "active" || s === "installed"))
+                        wallet = "saved";
+                      else if (
+                        statuses.every((s) => s === "voided" || s === "deleted")
+                      )
+                        wallet = "removed";
+                      else wallet = "pending";
+                    }
+                    const badge = walletBadge(wallet);
+                    const name =
+                      `${c.first_name ?? "Guest"} ${c.last_name ?? ""}`.trim();
+                    const contact = c.email ?? c.phone ?? "—";
 
-                  return (
-                    <tr key={c.id} className="group transition-colors hover:bg-muted/50">
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/dashboard/customers/${c.id}`}
-                          className="flex items-center gap-3"
-                        >
-                          <span
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                            style={{ backgroundColor: avatarColor(name) }}
+                    return (
+                      <tr
+                        key={c.id}
+                        className="group transition-colors hover:bg-muted/40"
+                      >
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/dashboard/customers/${c.id}`}
+                            className="flex items-center gap-4"
                           >
-                            {initials(name)}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium text-foreground group-hover:text-primary">
-                              {name}
+                            <span
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
+                              style={{ backgroundColor: avatarColor(name) }}
+                            >
+                              {initial(name)}
                             </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                              {contact}
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold text-foreground group-hover:text-primary">
+                                {name}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {contact}
+                              </span>
                             </span>
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                            <Stamp className="h-4 w-4 text-muted-foreground" />
+                            {stamps}
                           </span>
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                          <Stamp className="h-4 w-4 text-muted-foreground" />
-                          {stamps}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">
-                        {rewards > 0 ? (
-                          <Badge variant="success">Reward ready</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {formatDate(c.last_seen_at ?? c.first_seen_at)}
-                      </td>
-                      <td className="px-5 py-3">
-                        {c.marketing_consent ? (
-                          <Badge variant="success">Opted in</Badge>
-                        ) : (
-                          <Badge variant="default">Opted out</Badge>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        <Badge variant={badge.variant}>{badge.label}</Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                        </td>
+                        <td className="px-6 py-4">
+                          {rewards > 0 ? (
+                            <Badge variant="success">Reward ready</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {formatDate(c.last_seen_at ?? c.first_seen_at)}
+                        </td>
+                        <td className="px-6 py-4">
+                          {c.marketing_consent ? (
+                            <Badge variant="success">Opted in</Badge>
+                          ) : (
+                            <Badge variant="warning">Opted out</Badge>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge variant={badge.variant}>{badge.label}</Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {hasMore ? (
+            <div className="mt-6 flex justify-center">
+              <Link
+                href={showMoreHref()}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary"
+              >
+                Show more customers
+                <ChevronDown className="h-4 w-4" />
+              </Link>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
