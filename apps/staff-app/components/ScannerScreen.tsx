@@ -93,9 +93,10 @@ export function ScannerScreen({
         {showCamera ? (
           <View style={styles.cameraWrap}>
             <ErrorBoundary
-              fallback={() => (
+              fallback={(err) => (
                 <Text style={styles.cameraError}>
-                  Camera unavailable on this device. Enter the card code below.
+                  Camera error: {err.message}
+                  {"\n\n"}Enter the card code below instead.
                 </Text>
               )}
             >
