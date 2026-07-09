@@ -15,6 +15,7 @@ import {
   Receipt,
   HelpCircle,
   Plus,
+  ScanLine,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@llw/ui";
@@ -62,6 +63,14 @@ export function Sidebar({
           </div>
         </div>
       </div>
+
+      <Link
+        href="/scan"
+        className="mb-4 flex items-center gap-3 rounded-xl bg-accent/10 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/20"
+      >
+        <ScanLine className="h-[18px] w-[18px]" />
+        Scan cards
+      </Link>
 
       <nav className="flex-1 space-y-1">
         {NAV.map((item) => {

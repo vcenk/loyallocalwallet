@@ -15,7 +15,9 @@ Scan QR -> enroll on web -> save to Apple Wallet or Google Wallet -> show wallet
 Apps in MVP:
 
 1. Business dashboard web app.
-2. Staff scanner mobile app.
+2. Staff scanner — a mobile web page in the dashboard at `/scan` (camera QR via
+   html5-qrcode + manual entry). The standalone Expo app was retired in favor of
+   this; staff open the site on their phone and log in. No native app to ship.
 
 ## Core positioning
 
@@ -26,8 +28,7 @@ No-app loyalty wallet + simple retention automation for cafés, salons, restaura
 Use this structure unless explicitly changed:
 
 ```txt
-apps/dashboard       # Next.js dashboard
-apps/staff-app       # Expo React Native scanner app
+apps/dashboard       # Next.js dashboard (incl. /scan staff web scanner)
 packages/ui          # shared UI
 packages/db          # Supabase types/queries
 packages/wallet      # wallet pass helpers, server-side only for secrets
@@ -41,7 +42,7 @@ docs                 # product and technical docs
 - TypeScript everywhere
 - Next.js for dashboard
 - Tailwind for dashboard UI
-- Expo React Native for staff app
+- Staff scanner is a mobile web page (`/scan`) using html5-qrcode — no native app
 - Supabase Postgres/Auth/Storage
 - Stripe Billing
 - Apple PassKit
