@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   walletPassId: z.string().uuid(),
-  locationId: z.string().uuid().optional(),
+  locationId: z.string().uuid().nullish(),
 });
 
 // POST /api/staff/redeem — redeem an available reward.

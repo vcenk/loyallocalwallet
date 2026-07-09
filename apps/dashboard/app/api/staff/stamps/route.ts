@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   walletPassId: z.string().uuid(),
-  locationId: z.string().uuid().optional(),
+  locationId: z.string().uuid().nullish(),
   eventType: z.enum(["earn", "bonus"]).optional(),
   reason: z.string().max(120).optional(),
   quantity: z.coerce.number().int().min(1).max(100000).optional(),

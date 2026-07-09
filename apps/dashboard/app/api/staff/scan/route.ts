@@ -12,7 +12,7 @@ import {
 
 const bodySchema = z.object({
   barcodeValue: z.string().min(1),
-  locationId: z.string().uuid().optional(),
+  locationId: z.string().uuid().nullish(),
 });
 
 // POST /api/staff/scan — validate a scanned pass and return current progress.
