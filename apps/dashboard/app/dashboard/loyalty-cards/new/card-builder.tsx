@@ -173,7 +173,7 @@ export function CardBuilder({
     <div>
       <StepHeader steps={[...STEPS]} current={step} />
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">
           <div className="space-y-6">
             {step === 0 ? (

@@ -33,17 +33,21 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard/billing", label: "Billing", icon: Receipt },
 ];
 
-export function Sidebar({
+// Shared inner content used by both the desktop sidebar and the mobile drawer.
+// `onNavigate` lets the mobile drawer close itself when a link is tapped.
+export function SidebarContent({
   businessName = "Your business",
   planLabel = "Trial plan",
+  onNavigate,
 }: {
   businessName?: string;
   planLabel?: string;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-background px-4 py-6 md:flex print:hidden">
+    <>
       <div className="mb-6 px-2">
         <h1 className="text-xl font-extrabold tracking-tight text-primary">
           LoyalLocal
@@ -66,6 +70,7 @@ export function Sidebar({
 
       <Link
         href="/scan"
+        onClick={onNavigate}
         className="mb-4 flex items-center gap-3 rounded-xl bg-accent/10 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-accent/20"
       >
         <ScanLine className="h-[18px] w-[18px]" />
@@ -83,6 +88,7 @@ export function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors active:scale-[0.98]",
                 active
@@ -100,6 +106,7 @@ export function Sidebar({
       <div className="mt-auto space-y-2 border-t border-border pt-4">
         <Link
           href="/dashboard/campaigns/new"
+          onClick={onNavigate}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
@@ -107,6 +114,7 @@ export function Sidebar({
         </Link>
         <Link
           href="/dashboard/loyalty-cards/new"
+          onClick={onNavigate}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
           <CreditCard className="h-4 w-4" />
@@ -114,12 +122,24 @@ export function Sidebar({
         </Link>
         <Link
           href="/dashboard/settings"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <HelpCircle className="h-[18px] w-[18px]" />
           Help Center
         </Link>
       </div>
+    </>
+  );
+}
+
+export function Sidebar(props: {
+  businessName?: string;
+  planLabel?: string;
+}) {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-background px-4 py-6 md:flex print:hidden">
+      <SidebarContent {...props} />
     </aside>
   );
 }

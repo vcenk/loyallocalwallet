@@ -98,7 +98,7 @@ export function CampaignComposer({
     <div>
       <StepHeader steps={["Goal", "Audience", "Message", "Send"]} current={2} />
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Builder */}
         <div className="space-y-6 lg:col-span-3">
           <Section title="What's the goal?" description="Pick an outcome — we'll set a smart audience and starting message.">

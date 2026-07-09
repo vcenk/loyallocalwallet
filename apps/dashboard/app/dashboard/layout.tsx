@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { Button } from "@llw/ui";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
+import { MobileNav } from "@/components/mobile-nav";
 import { signOut } from "./actions";
 
 export default async function DashboardLayout({
@@ -40,16 +41,19 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen bg-background">
       <Sidebar businessName={businessName} planLabel={planLabel} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6 print:hidden">
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-foreground">
-              {businessName}
-            </p>
-            <p className="text-xs capitalize text-muted-foreground">
-              {membership.role.replace("_", " ")}
-            </p>
+        <header className="flex h-16 items-center justify-between border-b border-border bg-background px-4 sm:px-6 print:hidden">
+          <div className="flex items-center gap-2">
+            <MobileNav businessName={businessName} planLabel={planLabel} />
+            <div className="leading-tight max-[380px]:hidden">
+              <p className="text-sm font-semibold text-foreground">
+                {businessName}
+              </p>
+              <p className="text-xs capitalize text-muted-foreground">
+                {membership.role.replace("_", " ")}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               aria-label="Notifications"
@@ -67,7 +71,7 @@ export default async function DashboardLayout({
             </form>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
           {children}
         </main>
       </div>

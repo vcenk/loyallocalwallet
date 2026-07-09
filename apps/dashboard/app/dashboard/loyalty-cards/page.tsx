@@ -121,7 +121,7 @@ export default async function LoyaltyCardsPage({
             ))}
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {rows.map((p) => {
               const d = designByProgram.get(p.id);
               const required = p.stamps_required ?? 10;

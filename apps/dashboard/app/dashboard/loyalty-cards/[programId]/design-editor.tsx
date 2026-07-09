@@ -73,7 +73,7 @@ export function DesignEditor({
   const [stampStyle, setStampStyle] = useState(initial.stampStyle);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
       <div className="space-y-5 lg:col-span-3">
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground">
